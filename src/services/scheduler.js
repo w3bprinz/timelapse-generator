@@ -13,7 +13,7 @@ class Scheduler {
   async processScreenshot() {
     if (this.isProcessing) {
       console.log("Screenshot-Verarbeitung läuft bereits, überspringe...");
-      return;
+      return null;
     }
 
     this.isProcessing = true;
@@ -23,6 +23,9 @@ class Scheduler {
         throw new Error("Kein gültiger Screenshot erstellt");
       }
       return result;
+    } catch (error) {
+      console.error("Fehler in processScreenshot:", error);
+      return null;
     } finally {
       this.isProcessing = false;
     }
@@ -34,7 +37,11 @@ class Scheduler {
       "*/6 * * * *",
       async () => {
         try {
-          await this.processScreenshot();
+          const result = await this.processScreenshot();
+          if (!result) {
+            console.log("Kein Screenshot erstellt, überspringe...");
+            return;
+          }
         } catch (error) {
           console.error("Fehler beim Erstellen des Screenshots:", error);
         }
@@ -46,11 +53,16 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "30 8,22 * * *",
+      "35 8,22 * * *",
       async () => {
         try {
-          const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
           const result = await this.processScreenshot();
+          if (!result) {
+            console.log("Kein Screenshot erstellt, überspringe...");
+            return;
+          }
+
+          const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
 
           // Bild für Discord optimieren
           const optimizedPath = await rtspService.optimizeForDiscord(result.filepath);
