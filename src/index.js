@@ -53,9 +53,6 @@ client.once("ready", async () => {
   } catch (error) {
     console.error("Fehler beim Deploy der Commands:", error);
   }
-
-  // Initialisiere den Scheduler
-  new Scheduler(client);
 });
 
 client.login(token);
