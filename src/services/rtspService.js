@@ -55,13 +55,10 @@ class RTSPStreamService {
         "-probesize 5000000",
         `-i "${process.env.RTSP_URL}"`,
         "-frames:v 1",
-        "-c:v hevc",
-        "-preset ultrafast",
-        "-tune zerolatency",
-        "-pix_fmt yuv420p",
-        '-x265-params "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1"',
+        "-c:v png", // Direkte PNG-Ausgabe
+        "-f image2", // Bildformat
+        "-pix_fmt rgb24", // RGB-Farbraum
         "-threads 1",
-        "-compression_level 0", // Maximale PNG-Komprimierung
         `"${tempPath}"`,
       ].join(" ");
 

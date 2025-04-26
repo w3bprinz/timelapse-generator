@@ -1,12 +1,16 @@
 const { createScreenshot, postScreenshot, createTimelapse } = require("../utils/screenshot");
 const { formatUptime } = require("../utils/formatUptime");
 const { channelId, screenshotInterval, postTimes } = require("../config");
+const Scheduler = require("../services/scheduler");
 
 module.exports = {
   name: "ready",
   once: true,
   async execute(client) {
     console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
+
+    // Initialisiere den Scheduler
+    new Scheduler(client);
 
     // Starte den Screenshot-Timer
     setInterval(async () => {
