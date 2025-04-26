@@ -33,24 +33,22 @@ class RTSPStreamService {
       streamUrl: rtspUrl,
       wsPort: 9999,
       ffmpegOptions: {
-        // Bewährte RTSP-Optionen
+        // RTSP-Optionen
         "-rtsp_transport": "tcp",
-        "-analyzeduration": "10000000",
-        "-probesize": "5000000",
+        "-stimeout": "5000000",
+        "-reorder_queue_size": "5000",
+        "-max_delay": "500000",
 
-        // Video-Verarbeitung
-        "-vf": "format=rgb24,setpts=PTS-STARTPTS",
-        "-compression_level": "9",
-        "-update": "1",
-
-        // Codec und Format
-        "-c:v": "libx264", // Verwende H.264 statt MPEG-1
-        "-pix_fmt": "yuv420p", // Standard Pixel-Format
-        "-preset": "veryfast", // Schnelle Kodierung
+        // HEVC/Codec-Optionen
+        "-c:v": "libx264",
+        "-pix_fmt": "yuv420p",
+        "-preset": "veryfast",
+        "-tune": "zerolatency",
+        "-x264-params": "keyint=30:min-keyint=30:scenecut=0",
 
         // Performance-Optionen
         "-threads": "0",
-        "-r": "30", // Standard-Framerate
+        "-r": "30",
         "-b:v": "8000k",
         "-maxrate": "9000k",
         "-bufsize": "16000k",
@@ -92,23 +90,25 @@ class RTSPStreamService {
     const finalPath = path.join(this.screenshotsPath, filename);
 
     try {
-      // Erstelle Screenshot mit bewährten FFmpeg-Parametern
+      // Erstelle Screenshot mit optimierten FFmpeg-Parametern
       const ffmpegCommand = [
         "ffmpeg -y",
         "-rtsp_transport tcp",
-        "-analyzeduration 10000000",
-        "-probesize 5000000",
+        "-stimeout 5000000",
+        "-reorder_queue_size 5000",
+        "-max_delay 500000",
         `-i "${process.env.RTSP_URL}"`,
         "-frames:v 1",
-        '-vf "format=rgb24,setpts=PTS-STARTPTS"',
-        "-compression_level 9",
-        "-update 1",
+        "-c:v libx264",
+        "-preset veryfast",
+        "-tune zerolatency",
+        '-x264-params "keyint=30:min-keyint=30:scenecut=0"',
         `"${tempPath}"`,
       ].join(" ");
 
       await execPromise(ffmpegCommand);
 
-      // Verarbeite das Bild mit Sharp und speichere es in einer neuen Datei
+      // Verarbeite das Bild mit Sharp
       await sharp(tempPath).jpeg({ quality: 100 }).toFile(finalPath);
 
       // Lösche die temporäre Datei
@@ -120,7 +120,6 @@ class RTSPStreamService {
       };
     } catch (error) {
       console.error("Fehler beim Erstellen des Screenshots:", error);
-      // Stelle sicher, dass die temporäre Datei gelöscht wird
       if (fs.existsSync(tempPath)) {
         fs.unlinkSync(tempPath);
       }
