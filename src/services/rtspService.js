@@ -130,6 +130,52 @@ class RTSPStreamService {
       throw error;
     }
   }
+
+  async createTimelapse(dayString) {
+    try {
+      const screenshotsDir = this.screenshotsPath;
+      const outputPath = path.join(this.timelapsePath, `timelapse_${dayString}.mp4`);
+
+      // Finde alle Screenshots für den angegebenen Tag
+      const screenshots = fs
+        .readdirSync(screenshotsDir)
+        .filter((file) => file.startsWith(`screenshot_${dayString}`) && file.endsWith(".png"))
+        .sort()
+        .map((file) => path.join(screenshotsDir, file));
+
+      if (screenshots.length === 0) {
+        throw new Error(`Keine Screenshots für ${dayString} gefunden`);
+      }
+
+      // Erstelle eine temporäre Datei mit allen Bildpfaden
+      const listFile = path.join(this.timelapsePath, `list_${dayString}.txt`);
+      fs.writeFileSync(listFile, screenshots.map((file) => `file '${file}'`).join("\n"));
+
+      // Erstelle Timelapse mit FFmpeg
+      const ffmpegCommand = [
+        "ffmpeg -y",
+        "-f concat",
+        "-safe 0",
+        `-i "${listFile}"`,
+        "-c:v libx264",
+        "-preset medium",
+        "-crf 23",
+        "-pix_fmt yuv420p",
+        "-r 30",
+        `"${outputPath}"`,
+      ].join(" ");
+
+      await execPromise(ffmpegCommand);
+
+      // Lösche die temporäre Liste
+      fs.unlinkSync(listFile);
+
+      return outputPath;
+    } catch (error) {
+      console.error("Fehler beim Erstellen der Timelapse:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new RTSPStreamService();
