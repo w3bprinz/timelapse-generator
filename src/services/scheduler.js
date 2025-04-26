@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const rtspService = require("./rtspService");
 const { Client } = require("discord.js");
-const fs = require("fs");
+const fs = require("fs").promises;
 
 class Scheduler {
   constructor(client) {
@@ -27,15 +27,19 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "10 8,22 * * *",
+      "15 8,22 * * *",
       async () => {
         try {
           const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-          const filepath = await rtspService.takeScreenshot();
+          const result = await rtspService.takeScreenshot();
+
+          if (!result || !result.filepath) {
+            throw new Error("Kein gültiger Screenshot erstellt");
+          }
 
           // Bild verkleinern
-          const resizedPath = filepath.replace(".png", "_resized.png");
-          await rtspService.resizeImage(filepath, resizedPath);
+          const resizedPath = result.filepath.replace(".png", "_resized.png");
+          await rtspService.resizeImage(result.filepath, resizedPath);
 
           const berlinTime = new Date().toLocaleTimeString("de-DE", {
             timeZone: "Europe/Berlin",
