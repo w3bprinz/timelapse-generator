@@ -57,6 +57,7 @@ module.exports = {
             name: latestFile,
           },
         ],
+        flags: MessageFlags.Ephemeral,
       });
 
       // Lösche das temporäre Bild nach dem Senden
