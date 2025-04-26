@@ -113,13 +113,8 @@ class Scheduler {
             })
             .replace(/\./g, "-");
 
-          const timelapsePath = await rtspService.createTimelapse(dayString);
-          const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-
-          await channel.send({
-            content: `Timelapse für ${dayString}`,
-            files: [timelapsePath],
-          });
+          await rtspService.createTimelapse(dayString);
+          console.log(`Timelapse für ${dayString} wurde erfolgreich erstellt`);
         } catch (error) {
           console.error("Fehler beim Erstellen der Timelapse:", error);
         }
