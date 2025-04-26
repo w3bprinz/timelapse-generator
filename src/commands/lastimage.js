@@ -7,18 +7,15 @@ module.exports = {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
 
   async execute(interaction) {
-    // Sende sofort eine Antwort
-    const reply = await interaction.reply({
-      content: "Suche nach dem letzten Bild...",
-      fetchReply: true,
-    });
+    // Da die Verarbeitung länger als 3 Sekunden dauern kann, verwenden wir deferReply
+    await interaction.deferReply();
 
     try {
       const screenshotsPath = "/app/screenshots";
 
       // Prüfe, ob der Screenshot-Ordner existiert
       if (!fs.existsSync(screenshotsPath)) {
-        await reply.edit({
+        await interaction.editReply({
           content: "Keine Screenshots gefunden!",
         });
         return;
@@ -36,45 +33,49 @@ module.exports = {
         .sort((a, b) => b.time - a.time);
 
       if (files.length === 0) {
-        await reply.edit({
+        await interaction.editReply({
           content: "Keine Screenshots gefunden!",
         });
         return;
       }
 
-      const latestFile = files[0];
-      const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
-
       // Aktualisiere die Nachricht
-      await reply.edit({
+      await interaction.editReply({
         content: "Verarbeite das Bild...",
       });
 
-      // Verkleinere das Bild
-      await sharp(latestFile.path)
-        .resize(1920, 1080, {
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .toFile(resizedPath);
+      // Verarbeite das Bild
+      const latestFile = files[0];
+      const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
 
-      // Sende das verkleinerte Bild
-      await reply.edit({
-        content: "Hier ist das letzte aufgenommene Bild:",
-        files: [resizedPath],
-      });
+      try {
+        // Verkleinere das Bild
+        await sharp(latestFile.path)
+          .resize(1920, 1080, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .toFile(resizedPath);
 
-      // Lösche das temporäre verkleinerte Bild
-      fs.unlinkSync(resizedPath);
+        // Sende das verkleinerte Bild
+        await interaction.editReply({
+          content: "Hier ist das letzte aufgenommene Bild:",
+          files: [resizedPath],
+        });
+
+        // Lösche das temporäre verkleinerte Bild
+        fs.unlinkSync(resizedPath);
+      } catch (processError) {
+        console.error("Fehler bei der Bildverarbeitung:", processError);
+        await interaction.editReply({
+          content: "Es gab einen Fehler bei der Bildverarbeitung!",
+        });
+      }
     } catch (error) {
       console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
-      try {
-        await reply.edit({
-          content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
-        });
-      } catch (editError) {
-        console.error("Fehler beim Aktualisieren der Nachricht:", editError);
-      }
+      await interaction.editReply({
+        content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
+      });
     }
   },
 };
