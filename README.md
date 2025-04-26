@@ -68,8 +68,8 @@ Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Video
 ## Dateistruktur
 
 - Screenshots werden unter `/app/screenshots/` gespeichert
-  - Format: `screenshot_YYYY-MM-DD_HH-MM-SS.jpg`
-  - Beispiel: `screenshot_2024-04-26_14-20-01.jpg`
+  - Format: `screenshot_YYYY-MM-DD_HH-MM-SS.png`
+  - Beispiel: `screenshot_2024-04-26_14-20-01.png`
 - Timelapse-Videos werden unter `/app/timelapse/` gespeichert
   - Format: `timelapse_YYYY-MM-DD.mp4`
   - Beispiel: `timelapse_2024-04-26.mp4`

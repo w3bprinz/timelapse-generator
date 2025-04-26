@@ -11,7 +11,7 @@ ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
 // Erstellt einen Screenshot vom RTSP-Stream
 async function createScreenshot(rtspUrl) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outputPath = path.join("/app/screenshots", `screenshot-${timestamp}.jpg`);
+  const outputPath = path.join("/app/screenshots", `screenshot-${timestamp}.png`);
 
   return new Promise((resolve, reject) => {
     ffmpeg(rtspUrl)
@@ -79,7 +79,7 @@ async function createTimelapse() {
       "-pattern_type",
       "glob",
       "-i",
-      path.join("/app/screenshots", "screenshot_*.jpg"),
+      path.join("/app/screenshots", "screenshot_*.png"),
       "-c:v",
       "libx264",
       "-pix_fmt",

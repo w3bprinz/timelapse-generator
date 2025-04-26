@@ -33,7 +33,7 @@ class Scheduler {
           const { filepath } = await rtspService.takeScreenshot();
 
           // Bild verkleinern
-          const resizedPath = filepath.replace(".jpg", "_resized.jpg");
+          const resizedPath = filepath.replace(".png", "_resized.png");
           await rtspService.resizeImage(filepath, resizedPath);
 
           const berlinTime = new Date().toLocaleTimeString("de-DE", {
