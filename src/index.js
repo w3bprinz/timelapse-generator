@@ -59,12 +59,8 @@ client.on("interactionCreate", async (interaction) => {
 
 // Bot ist bereit
 client.once("ready", () => {
+  console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
   console.log("Bot ist online!");
-
-  // Starte den RTSP-Stream wenn eine URL konfiguriert ist
-  if (process.env.RTSP_URL) {
-    rtspService.startStream(process.env.RTSP_URL);
-  }
 
   // Initialisiere den Scheduler
   new Scheduler(client);
