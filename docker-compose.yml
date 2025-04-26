@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  discord-bot:
+    image: ghcr.io/w3bprinz/timelapse-generator:latest
+    container_name: timelapse-bot
+    restart: unless-stopped
+    env_file:
+      - /app/.env
+    volumes:
+      - ./screenshots:/app/screenshots
+      - ./timelapses:/app/timelapses
+    environment:
+      - NODE_ENV=production
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
