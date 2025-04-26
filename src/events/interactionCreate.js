@@ -14,7 +14,19 @@ module.exports = {
       await command.execute(interaction);
     } catch (error) {
       console.error("Unbehandelter Fehler im Command:", error);
-      // Keine Antwort mehr hier, da der Command selbst für die Fehlerbehandlung zuständig ist
+
+      // Falls Interaction noch NICHT beantwortet wurde (wichtig!)
+      if (!interaction.replied && !interaction.deferred) {
+        try {
+          await interaction.reply({
+            content: "Es ist ein Fehler aufgetreten! 🚨",
+            ephemeral: true,
+          });
+        } catch (replyError) {
+          console.error("Konnte nicht mehr auf Interaction antworten:", replyError);
+        }
+      }
+      // Wenn Interaction schon deferred oder replied wurde → einfach nur Fehler loggen
     }
   },
 };
