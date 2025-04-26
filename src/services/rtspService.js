@@ -23,7 +23,7 @@ class RTSPStreamService {
     }
   }
 
-  startStream(rtspUrl) {
+  async startStream(rtspUrl) {
     if (this.stream) {
       this.stream.stop();
     }
@@ -37,30 +37,37 @@ class RTSPStreamService {
         "-rtsp_transport": "tcp",
         "-analyzeduration": "10000000",
         "-probesize": "5000000",
+        "-fflags": "+nobuffer+fastseek+igndts",
+        "-flags": "low_delay",
+        "-strict": "experimental",
 
-        // CPU-optimierte Codec-Einstellungen
-        "-c:v": "libx264",
+        // H.264-Dekodierung
+        "-c:v": "h264",
         "-pix_fmt": "yuv420p",
-        "-preset": "veryfast", // Schnellste Kodierung
-        "-tune": "zerolatency", // Minimale Verzögerung
+        "-preset": "veryfast",
+        "-tune": "zerolatency",
         "-x264-params": [
-          "keyint=30", // Keyframe alle 30 Frames
-          "min-keyint=30", // Mindestens 30 Frames zwischen Keyframes
-          "scenecut=0", // Keine Szenenänderungserkennung
-          "threads=4", // 4 Threads für 4 CPU-Kerne
-          "sliced-threads=1", // Sliced Threading für bessere CPU-Auslastung
-          "no-cabac=1", // Deaktiviere CABAC für schnellere Kodierung
-          "no-8x8dct=1", // Deaktiviere 8x8 DCT für schnellere Kodierung
-          "no-weightb=1", // Deaktiviere weighted prediction
-          "no-mbtree=1", // Deaktiviere macroblock tree
+          "keyint=30",
+          "min-keyint=30",
+          "scenecut=0",
+          "threads=4",
+          "sliced-threads=1",
+          "no-cabac=1",
+          "no-8x8dct=1",
+          "no-weightb=1",
+          "no-mbtree=1",
+          "sync-lookahead=0",
+          "rc-lookahead=0",
         ].join(":"),
 
         // Performance-Optionen
-        "-threads": "4", // 4 Threads für 4 CPU-Kerne
-        "-r": "15", // Reduzierte Framerate
-        "-b:v": "4000k", // Reduzierte Bitrate
+        "-threads": "4",
+        "-r": "15",
+        "-b:v": "4000k",
         "-maxrate": "5000k",
         "-bufsize": "8000k",
+        "-max_delay": "500000",
+        "-reorder_queue_size": "0",
 
         // Debug-Optionen
         "-stats": "",
@@ -68,7 +75,15 @@ class RTSPStreamService {
       },
     });
 
-    return this.stream;
+    // Warte kurz, bis der Stream stabil ist
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  stopStream() {
+    if (this.stream) {
+      this.stream.stop();
+      this.stream = null;
+    }
   }
 
   getBerlinTimestamp() {
@@ -89,17 +104,16 @@ class RTSPStreamService {
   }
 
   async takeScreenshot() {
-    if (!this.stream) {
-      throw new Error("Stream nicht initialisiert");
-    }
-
-    const timestamp = this.getBerlinTimestamp();
-    const filename = `screenshot_${timestamp}.jpg`;
-    const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
-    const finalPath = path.join(this.screenshotsPath, filename);
-
     try {
-      // Erstelle Screenshot mit CPU-optimierten FFmpeg-Parametern
+      // Starte den Stream
+      await this.startStream(process.env.RTSP_URL);
+
+      const timestamp = this.getBerlinTimestamp();
+      const filename = `screenshot_${timestamp}.jpg`;
+      const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
+      const finalPath = path.join(this.screenshotsPath, filename);
+
+      // Erstelle Screenshot mit FFmpeg
       const ffmpegCommand = [
         "ffmpeg -y",
         "-rtsp_transport tcp",
@@ -107,7 +121,7 @@ class RTSPStreamService {
         "-probesize 5000000",
         `-i "${process.env.RTSP_URL}"`,
         "-frames:v 1",
-        "-c:v libx264",
+        "-c:v h264",
         "-preset veryfast",
         "-tune zerolatency",
         '-x264-params "keyint=30:min-keyint=30:scenecut=0:threads=4:sliced-threads=1:no-cabac=1:no-8x8dct=1:no-weightb=1:no-mbtree=1"',
@@ -122,15 +136,17 @@ class RTSPStreamService {
       // Lösche die temporäre Datei
       fs.unlinkSync(tempPath);
 
+      // Stoppe den Stream
+      this.stopStream();
+
       return {
         filename,
         filepath: finalPath,
       };
     } catch (error) {
+      // Stelle sicher, dass der Stream gestoppt wird, auch bei Fehlern
+      this.stopStream();
       console.error("Fehler beim Erstellen des Screenshots:", error);
-      if (fs.existsSync(tempPath)) {
-        fs.unlinkSync(tempPath);
-      }
       throw error;
     }
   }
