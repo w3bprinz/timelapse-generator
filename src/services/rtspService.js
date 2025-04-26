@@ -35,9 +35,6 @@ class RTSPStreamService {
       ffmpegOptions: {
         // RTSP-Optionen
         "-rtsp_transport": "tcp",
-        "-stimeout": "5000000",
-        "-reorder_queue_size": "0",
-        "-max_delay": "2000000",
         "-analyzeduration": "10000000",
         "-probesize": "5000000",
         "-fflags": "+nobuffer+fastseek+igndts",
@@ -111,9 +108,6 @@ class RTSPStreamService {
         const ffmpegCommand = [
           "ffmpeg -y",
           "-rtsp_transport tcp",
-          "-stimeout 5000000",
-          "-reorder_queue_size 0",
-          "-max_delay 2000000",
           "-analyzeduration 10000000",
           "-probesize 5000000",
           `-i "${process.env.RTSP_URL}"`,
