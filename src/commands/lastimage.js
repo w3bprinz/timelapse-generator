@@ -7,17 +7,18 @@ module.exports = {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
 
   async execute(interaction) {
-    try {
-      // Sende sofort eine Antwort
-      await interaction.reply({
-        content: "Suche nach dem letzten Bild...",
-      });
+    // Sende sofort eine Antwort
+    const reply = await interaction.reply({
+      content: "Suche nach dem letzten Bild...",
+      fetchReply: true,
+    });
 
+    try {
       const screenshotsPath = "/app/screenshots";
 
       // Prüfe, ob der Screenshot-Ordner existiert
       if (!fs.existsSync(screenshotsPath)) {
-        await interaction.editReply({
+        await reply.edit({
           content: "Keine Screenshots gefunden!",
         });
         return;
@@ -35,7 +36,7 @@ module.exports = {
         .sort((a, b) => b.time - a.time);
 
       if (files.length === 0) {
-        await interaction.editReply({
+        await reply.edit({
           content: "Keine Screenshots gefunden!",
         });
         return;
@@ -45,7 +46,7 @@ module.exports = {
       const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
 
       // Aktualisiere die Nachricht
-      await interaction.editReply({
+      await reply.edit({
         content: "Verarbeite das Bild...",
       });
 
@@ -58,7 +59,7 @@ module.exports = {
         .toFile(resizedPath);
 
       // Sende das verkleinerte Bild
-      await interaction.editReply({
+      await reply.edit({
         content: "Hier ist das letzte aufgenommene Bild:",
         files: [resizedPath],
       });
@@ -67,14 +68,12 @@ module.exports = {
       fs.unlinkSync(resizedPath);
     } catch (error) {
       console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
-      if (!interaction.replied) {
-        await interaction.reply({
+      try {
+        await reply.edit({
           content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
         });
-      } else {
-        await interaction.editReply({
-          content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
-        });
+      } catch (editError) {
+        console.error("Fehler beim Aktualisieren der Nachricht:", editError);
       }
     }
   },
