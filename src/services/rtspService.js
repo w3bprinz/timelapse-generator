@@ -99,7 +99,8 @@ class RTSPStreamService {
         second: "2-digit",
         hour12: false,
       })
-      .replace(/[.,]/g, "-")
+      .replace(/(\d{2})\.(\d{2})\.(\d{4})/, "$3-$2-$1")
+      .replace(/(\d{2}):(\d{2}):(\d{2})/, "$1-$2-$3")
       .replace(/\s+/g, "_");
   }
 
