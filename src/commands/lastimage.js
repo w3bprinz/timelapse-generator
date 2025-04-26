@@ -9,7 +9,7 @@ module.exports = {
     // Sofortige Antwort, dass wir arbeiten
     await interaction.reply({
       content: "Verarbeite das letzte Bild...",
-      ephemeral: true,
+      flags: 64, // 64 entspricht EPHEMERAL
     });
 
     const screenshotsPath = path.join(__dirname, "../../screenshots");
@@ -49,10 +49,18 @@ module.exports = {
         .png({ quality: 100 })
         .toFile(outputPath);
 
-      // Sende das Bild
+      // Lese die Datei in einen Buffer
+      const fileBuffer = fs.readFileSync(outputPath);
+
+      // Sende das Bild mit dem Buffer
       await interaction.editReply({
         content: `Letztes Bild (${latestFile}):`,
-        files: [outputPath],
+        files: [
+          {
+            attachment: fileBuffer,
+            name: latestFile,
+          },
+        ],
       });
 
       // Lösche das temporäre Bild nach dem Senden
