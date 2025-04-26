@@ -73,19 +73,29 @@ class RTSPStreamService {
 
     const timestamp = this.getBerlinTimestamp();
     const filename = `screenshot_${timestamp}.jpg`;
-    const filepath = path.join(this.screenshotsPath, filename);
+    const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
+    const finalPath = path.join(this.screenshotsPath, filename);
 
     try {
-      await execPromise(`ffmpeg -i ${process.env.RTSP_URL} -vframes 1 -q:v 2 -y ${filepath}`);
+      // Erstelle Screenshot mit FFmpeg
+      await execPromise(`ffmpeg -i ${process.env.RTSP_URL} -vframes 1 -q:v 2 -y ${tempPath}`);
 
-      await sharp(filepath).jpeg({ quality: 100 }).toFile(filepath);
+      // Verarbeite das Bild mit Sharp und speichere es in einer neuen Datei
+      await sharp(tempPath).jpeg({ quality: 100 }).toFile(finalPath);
+
+      // Lösche die temporäre Datei
+      fs.unlinkSync(tempPath);
 
       return {
         filename,
-        filepath,
+        filepath: finalPath,
       };
     } catch (error) {
       console.error("Fehler beim Erstellen des Screenshots:", error);
+      // Stelle sicher, dass die temporäre Datei gelöscht wird
+      if (fs.existsSync(tempPath)) {
+        fs.unlinkSync(tempPath);
+      }
       throw error;
     }
   }
