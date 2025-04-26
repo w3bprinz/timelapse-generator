@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   discord-bot:
-    image: ghcr.io/w3bprinz/timelapse-generator:latest
+    image: ghcr.io/w3bprinz/timelapse-generator:main
     container_name: timelapse-bot
     restart: unless-stopped
     volumes:
