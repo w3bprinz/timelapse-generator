@@ -1,6 +1,6 @@
-# Timelapse Generator Discord Bot
+# Timelapse Generator
 
-Ein Discord-Bot, der automatisch Screenshots von einem RTSP-Stream erstellt und Timelapse-Videos generiert.
+Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Videos generiert.
 
 ## Funktionen
 
@@ -89,3 +89,17 @@ Das Docker-Image wird automatisch bei jedem Push zum Master-Branch erstellt und 
 ## Lizenz
 
 MIT
+
+## Konfiguration
+
+Erstellen Sie eine `.env` Datei mit folgenden Einstellungen:
+
+```env
+DISCORD_TOKEN=ihr_discord_token
+CHANNEL_ID=ihre_channel_id
+SCREENSHOT_INTERVAL=300000
+POST_TIMES=12:00,18:00
+RTSP_URL=rtsp://ihre_kamera_ip
+RTSP_USERNAME=ihr_benutzername
+RTSP_PASSWORD=ihr_passwort
+```
