@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
+const { MessageFlags } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,7 +14,10 @@ module.exports = {
     ),
   async execute(interaction) {
     if (!interaction.member.permissions.has("MANAGE_MESSAGES")) {
-      return interaction.reply({ content: "Du hast keine Berechtigung, Nachrichten zu löschen!", ephemeral: true });
+      return interaction.reply({
+        content: "Du hast keine Berechtigung, Nachrichten zu löschen!",
+        flags: MessageFlags.Ephemeral,
+      });
     }
 
     const amount = interaction.options.getInteger("anzahl") || 100;
@@ -21,10 +25,16 @@ module.exports = {
     try {
       const messages = await interaction.channel.messages.fetch({ limit: amount });
       await interaction.channel.bulkDelete(messages);
-      await interaction.reply({ content: `${messages.size} Nachrichten wurden gelöscht.`, ephemeral: true });
+      await interaction.reply({
+        content: `${messages.size} Nachrichten wurden gelöscht.`,
+        flags: MessageFlags.Ephemeral,
+      });
     } catch (error) {
       console.error(error);
-      await interaction.reply({ content: "Es gab einen Fehler beim Löschen der Nachrichten!", ephemeral: true });
+      await interaction.reply({
+        content: "Es gab einen Fehler beim Löschen der Nachrichten!",
+        flags: MessageFlags.Ephemeral,
+      });
     }
   },
 };

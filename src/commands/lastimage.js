@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -6,19 +6,14 @@ const sharp = require("sharp");
 module.exports = {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Postet das letzte aufgenommene Bild"),
   async execute(interaction) {
-    // Sofortige Antwort, dass wir arbeiten
-    await interaction.reply({
-      content: "Verarbeite das letzte Bild...",
-      flags: 64, // 64 entspricht EPHEMERAL
-    });
-
-    const screenshotsPath = path.join(__dirname, "../../screenshots");
-
     try {
+      const screenshotsPath = "/app/screenshots";
+
       // Prüfe ob der Screenshot-Ordner existiert
       if (!fs.existsSync(screenshotsPath)) {
-        return await interaction.editReply({
+        return await interaction.reply({
           content: "Keine Screenshots gefunden!",
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -34,8 +29,9 @@ module.exports = {
         });
 
       if (files.length === 0) {
-        return await interaction.editReply({
+        return await interaction.reply({
           content: "Keine Screenshots gefunden!",
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -53,7 +49,7 @@ module.exports = {
       const fileBuffer = fs.readFileSync(outputPath);
 
       // Sende das Bild mit dem Buffer
-      await interaction.editReply({
+      await interaction.reply({
         content: `Letztes Bild (${latestFile}):`,
         files: [
           {
@@ -67,9 +63,12 @@ module.exports = {
       fs.unlinkSync(outputPath);
     } catch (error) {
       console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
-      await interaction.editReply({
-        content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
-      });
+      if (!interaction.replied) {
+        await interaction.reply({
+          content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
     }
   },
 };

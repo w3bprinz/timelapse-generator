@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 const os = require("os");
 const fs = require("fs");
 const path = require("path");
@@ -11,7 +11,7 @@ module.exports = {
       const sent = await interaction.reply({
         content: "Berechne Status...",
         fetchReply: true,
-        flags: 64, // 64 entspricht EPHEMERAL
+        flags: MessageFlags.Ephemeral,
       });
       const latency = sent.createdTimestamp - interaction.createdTimestamp;
 
@@ -56,14 +56,14 @@ module.exports = {
       await interaction.editReply({
         content: "",
         embeds: [embed],
-        flags: 64, // 64 entspricht EPHEMERAL
+        flags: MessageFlags.Ephemeral,
       });
     } catch (error) {
       console.error("Fehler im Status-Befehl:", error);
       if (!interaction.replied) {
         await interaction.reply({
           content: "Es gab einen Fehler beim Abrufen des Status!",
-          flags: 64, // 64 entspricht EPHEMERAL
+          flags: MessageFlags.Ephemeral,
         });
       }
     }
