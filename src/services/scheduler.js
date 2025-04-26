@@ -55,7 +55,7 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "50 8,22 * * *",
+      "0 8,20 * * *",
       async () => {
         try {
           const result = await this.processScreenshot();
@@ -99,7 +99,7 @@ class Scheduler {
 
     // Timelapse-Erstellung um Mitternacht
     cron.schedule(
-      "0 0 * * *",
+      "10 0 * * *",
       async () => {
         try {
           const yesterday = new Date();
