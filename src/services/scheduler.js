@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const rtspService = require("./rtspService");
 const { Client } = require("discord.js");
+const fs = require("fs");
 
 class Scheduler {
   constructor(client) {
@@ -26,11 +27,11 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "5 8,22 * * *",
+      "10 8,22 * * *",
       async () => {
         try {
           const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-          const { filepath } = await rtspService.takeScreenshot();
+          const filepath = await rtspService.takeScreenshot();
 
           // Bild verkleinern
           const resizedPath = filepath.replace(".png", "_resized.png");
@@ -46,6 +47,13 @@ class Scheduler {
             content: `Täglicher Screenshot (${berlinTime})`,
             files: [resizedPath],
           });
+
+          // Lösche das temporäre verkleinerte Bild
+          try {
+            await fs.unlink(resizedPath);
+          } catch (unlinkError) {
+            console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
+          }
         } catch (error) {
           console.error("Fehler beim Posten des Screenshots:", error);
         }
