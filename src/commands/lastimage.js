@@ -6,14 +6,16 @@ const sharp = require("sharp");
 module.exports = {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Postet das letzte aufgenommene Bild"),
   async execute(interaction) {
+    // Defer die Antwort, da die Bildverarbeitung Zeit braucht
+    await interaction.deferReply();
+
     const screenshotsPath = path.join(__dirname, "../../screenshots");
 
     try {
       // Prüfe ob der Screenshot-Ordner existiert
       if (!fs.existsSync(screenshotsPath)) {
-        return interaction.reply({
+        return await interaction.editReply({
           content: "Keine Screenshots gefunden!",
-          ephemeral: true,
         });
       }
 
@@ -29,9 +31,8 @@ module.exports = {
         });
 
       if (files.length === 0) {
-        return interaction.reply({
+        return await interaction.editReply({
           content: "Keine Screenshots gefunden!",
-          ephemeral: true,
         });
       }
 
@@ -50,7 +51,7 @@ module.exports = {
       }
 
       // Sende das Bild
-      await interaction.reply({
+      await interaction.editReply({
         content: `Letztes Bild (${latestFile}):`,
         files: [outputPath],
       });
@@ -59,9 +60,8 @@ module.exports = {
       fs.unlinkSync(outputPath);
     } catch (error) {
       console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
-      await interaction.reply({
+      await interaction.editReply({
         content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
-        ephemeral: true,
       });
     }
   },
