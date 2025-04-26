@@ -1,4 +1,3 @@
-const Stream = require("node-rtsp-stream");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -8,7 +7,6 @@ const execPromise = util.promisify(exec);
 
 class RTSPStreamService {
   constructor() {
-    this.stream = null;
     this.screenshotsPath = path.join(__dirname, "../../screenshots");
     this.timelapsePath = path.join(__dirname, "../../timelapse");
     this.ensureDirectories();
@@ -20,55 +18,6 @@ class RTSPStreamService {
     }
     if (!fs.existsSync(this.timelapsePath)) {
       fs.mkdirSync(this.timelapsePath, { recursive: true });
-    }
-  }
-
-  async startStream(rtspUrl) {
-    if (this.stream) {
-      this.stream.stop();
-    }
-
-    this.stream = new Stream({
-      name: "timelapse",
-      streamUrl: rtspUrl,
-      wsPort: 9999,
-      ffmpegOptions: {
-        // RTSP-Optionen
-        "-rtsp_transport": "tcp",
-        "-analyzeduration": "10000000",
-        "-probesize": "5000000",
-        "-fflags": "+nobuffer+fastseek+igndts",
-        "-flags": "low_delay",
-        "-strict": "experimental",
-
-        // HEVC-Dekodierung
-        "-c:v": "hevc",
-        "-pix_fmt": "yuv420p",
-        "-preset": "ultrafast",
-        "-tune": "zerolatency",
-        "-x265-params": "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1",
-
-        // Performance-Optionen
-        "-threads": "1",
-        "-r": "15",
-        "-b:v": "4000k",
-        "-maxrate": "5000k",
-        "-bufsize": "8000k",
-
-        // Debug-Optionen
-        "-stats": "",
-        "-loglevel": "warning",
-      },
-    });
-
-    // Warte länger, bis der Stream stabil ist
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-
-  stopStream() {
-    if (this.stream) {
-      this.stream.stop();
-      this.stream = null;
     }
   }
 
@@ -96,115 +45,88 @@ class RTSPStreamService {
     const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
     const finalPath = path.join(this.screenshotsPath, filename);
 
-    // Versuche bis zu 3 Mal, ein gutes Bild zu bekommen
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`Versuch ${attempt}: Erstelle Screenshot...`);
+    try {
+      // Erstelle Screenshot mit FFmpeg mit maximaler Qualität
+      const ffmpegCommand = [
+        "ffmpeg -y",
+        "-rtsp_transport tcp",
+        "-analyzeduration 10000000",
+        "-probesize 5000000",
+        `-i "${process.env.RTSP_URL}"`,
+        "-frames:v 1",
+        "-c:v hevc",
+        "-preset ultrafast",
+        "-tune zerolatency",
+        "-pix_fmt yuv420p",
+        '-x265-params "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1"',
+        "-threads 1",
+        "-compression_level 0", // Maximale PNG-Komprimierung
+        `"${tempPath}"`,
+      ].join(" ");
 
-      try {
-        // Warte 2 Sekunden, um den Stream zu stabilisieren
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      await execPromise(ffmpegCommand);
 
-        // Erstelle Screenshot mit verbesserten Parametern
-        const ffmpegCommand = [
-          "ffmpeg -y",
-          "-rtsp_transport tcp",
-          "-analyzeduration 10000000",
-          "-probesize 5000000",
-          `-i "${process.env.RTSP_URL}"`,
-          "-frames:v 1",
-          "-c:v hevc",
-          "-preset ultrafast",
-          "-tune zerolatency",
-          "-pix_fmt yuv420p",
-          '-x265-params "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1"',
-          "-threads 1",
-          `"${tempPath}"`,
-        ].join(" ");
+      // Überprüfe, ob das Bild gültig ist
+      if (fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
+        // Verschiebe die temporäre Datei an den endgültigen Ort
+        fs.renameSync(tempPath, finalPath);
+        console.log(`Screenshot erfolgreich erstellt: ${finalPath}`);
 
-        await execPromise(ffmpegCommand);
-
-        // Überprüfe, ob das Bild gültig ist
-        if (fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
-          // Überprüfe die Bildqualität mit ffprobe
-          const ffprobeCommand = [
-            "ffprobe",
-            "-v error",
-            "-select_streams v:0",
-            "-show_entries stream=width,height",
-            "-of csv=p=0",
-            `"${tempPath}"`,
-          ].join(" ");
-
-          const { stdout } = await execPromise(ffprobeCommand);
-
-          if (stdout.trim()) {
-            // Bild ist gültig, verschiebe es an den endgültigen Ort
-            fs.renameSync(tempPath, finalPath);
-            console.log(`Screenshot erfolgreich erstellt: ${finalPath}`);
-
-            return {
-              filename,
-              filepath: finalPath,
-            };
-          }
-        }
-
-        // Warte 2 Sekunden vor dem nächsten Versuch
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      } catch (error) {
-        console.error(`Fehler bei Versuch ${attempt}:`, error);
-        // Warte 2 Sekunden vor dem nächsten Versuch
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return {
+          filename,
+          filepath: finalPath,
+        };
+      }
+    } catch (error) {
+      console.error("Fehler beim Erstellen des Screenshots:", error);
+    } finally {
+      // Lösche die temporäre Datei, falls vorhanden
+      if (fs.existsSync(tempPath)) {
+        fs.unlinkSync(tempPath);
       }
     }
-
-    // Lösche temporäre Datei, falls vorhanden
-    if (fs.existsSync(tempPath)) {
-      fs.unlinkSync(tempPath);
-    }
-
-    throw new Error("Konnte keinen gültigen Screenshot erstellen");
   }
 
-  async resizeImage(inputPath, outputPath, width = 800) {
-    await sharp(inputPath)
-      .resize(width, null, {
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality: 100 })
-      .toFile(outputPath);
-  }
-
-  async createTimelapse(day) {
-    const files = fs
-      .readdirSync(this.screenshotsPath)
-      .filter((file) => file.endsWith(".jpg"))
-      .sort();
-
-    if (files.length === 0) {
-      throw new Error("Keine Screenshots gefunden");
-    }
-
-    const timelapseOutput = path.join(this.timelapsePath, `timelapse_${day}.mp4`);
-
-    const fileListPath = path.join(this.screenshotsPath, "filelist.txt");
-    const fileList = files.map((file) => `file '${path.join(this.screenshotsPath, file)}'`).join("\n");
-    fs.writeFileSync(fileListPath, fileList);
+  async optimizeForDiscord(imagePath) {
+    const discordPath = path.join(this.screenshotsPath, "discord_temp.png");
 
     try {
-      await execPromise(
-        `ffmpeg -f concat -safe 0 -i ${fileListPath} -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -r 30 -y ${timelapseOutput}`
-      );
+      // Optimiere das Bild für Discord
+      await sharp(imagePath)
+        .resize(1920, 1080, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .png({
+          quality: 100,
+          compressionLevel: 0,
+        })
+        .toFile(discordPath);
 
-      files.forEach((file) => {
-        fs.unlinkSync(path.join(this.screenshotsPath, file));
-      });
-      fs.unlinkSync(fileListPath);
+      // Überprüfe die Dateigröße
+      const stats = fs.statSync(discordPath);
+      if (stats.size > 10 * 1024 * 1024) {
+        // Größer als 10MB
+        // Reduziere die Qualität schrittweise
+        let quality = 100;
+        while (stats.size > 10 * 1024 * 1024 && quality > 50) {
+          quality -= 10;
+          await sharp(imagePath)
+            .resize(1920, 1080, {
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .png({
+              quality: quality,
+              compressionLevel: 0,
+            })
+            .toFile(discordPath);
+        }
+      }
 
-      return timelapseOutput;
+      return discordPath;
     } catch (error) {
-      console.error("Fehler beim Erstellen der Timelapse:", error);
+      console.error("Fehler beim Optimieren des Bildes für Discord:", error);
       throw error;
     }
   }
