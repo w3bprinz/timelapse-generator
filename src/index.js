@@ -40,21 +40,6 @@ for (const file of eventFiles) {
   }
 }
 
-// Interaktion Handler
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error("Unbehandelter Fehler im Command:", error);
-    // Keine Antwort mehr hier, da der Command selbst für die Fehlerbehandlung zuständig ist
-  }
-});
-
 // Bot ist bereit
 client.once("ready", async () => {
   console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
