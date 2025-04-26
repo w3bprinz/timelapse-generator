@@ -39,19 +39,29 @@ class RTSPStreamService {
         "-reorder_queue_size": "5000",
         "-max_delay": "500000",
 
-        // HEVC/Codec-Optionen
+        // CPU-optimierte Codec-Einstellungen
         "-c:v": "libx264",
         "-pix_fmt": "yuv420p",
-        "-preset": "veryfast",
-        "-tune": "zerolatency",
-        "-x264-params": "keyint=30:min-keyint=30:scenecut=0",
+        "-preset": "veryfast", // Schnellste Kodierung
+        "-tune": "zerolatency", // Minimale Verzögerung
+        "-x264-params": [
+          "keyint=30", // Keyframe alle 30 Frames
+          "min-keyint=30", // Mindestens 30 Frames zwischen Keyframes
+          "scenecut=0", // Keine Szenenänderungserkennung
+          "threads=4", // 4 Threads für 4 CPU-Kerne
+          "sliced-threads=1", // Sliced Threading für bessere CPU-Auslastung
+          "no-cabac=1", // Deaktiviere CABAC für schnellere Kodierung
+          "no-8x8dct=1", // Deaktiviere 8x8 DCT für schnellere Kodierung
+          "no-weightb=1", // Deaktiviere weighted prediction
+          "no-mbtree=1", // Deaktiviere macroblock tree
+        ].join(":"),
 
         // Performance-Optionen
-        "-threads": "0",
-        "-r": "30",
-        "-b:v": "8000k",
-        "-maxrate": "9000k",
-        "-bufsize": "16000k",
+        "-threads": "4", // 4 Threads für 4 CPU-Kerne
+        "-r": "15", // Reduzierte Framerate
+        "-b:v": "4000k", // Reduzierte Bitrate
+        "-maxrate": "5000k",
+        "-bufsize": "8000k",
 
         // Debug-Optionen
         "-stats": "",
@@ -90,7 +100,7 @@ class RTSPStreamService {
     const finalPath = path.join(this.screenshotsPath, filename);
 
     try {
-      // Erstelle Screenshot mit optimierten FFmpeg-Parametern
+      // Erstelle Screenshot mit CPU-optimierten FFmpeg-Parametern
       const ffmpegCommand = [
         "ffmpeg -y",
         "-rtsp_transport tcp",
@@ -102,7 +112,7 @@ class RTSPStreamService {
         "-c:v libx264",
         "-preset veryfast",
         "-tune zerolatency",
-        '-x264-params "keyint=30:min-keyint=30:scenecut=0"',
+        '-x264-params "keyint=30:min-keyint=30:scenecut=0:threads=4:sliced-threads=1:no-cabac=1:no-8x8dct=1:no-weightb=1:no-mbtree=1"',
         `"${tempPath}"`,
       ].join(" ");
 
