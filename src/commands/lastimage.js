@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 const sharp = require("sharp");
 
@@ -14,7 +14,9 @@ module.exports = {
       const screenshotsPath = "/app/screenshots";
 
       // Prüfe, ob der Screenshot-Ordner existiert
-      if (!fs.existsSync(screenshotsPath)) {
+      try {
+        await fs.access(screenshotsPath);
+      } catch {
         await interaction.editReply({
           content: "Keine Screenshots gefunden!",
         });
@@ -22,13 +24,12 @@ module.exports = {
       }
 
       // Lese alle PNG-Dateien und sortiere sie nach Änderungsdatum
-      const files = fs
-        .readdirSync(screenshotsPath)
+      const files = (await fs.readdir(screenshotsPath))
         .filter((file) => file.endsWith(".png"))
         .map((file) => ({
           name: file,
           path: path.join(screenshotsPath, file),
-          time: fs.statSync(path.join(screenshotsPath, file)).mtime.getTime(),
+          time: fs.stat(path.join(screenshotsPath, file)).mtime.getTime(),
         }))
         .sort((a, b) => b.time - a.time);
 
@@ -64,7 +65,11 @@ module.exports = {
         });
 
         // Lösche das temporäre verkleinerte Bild
-        fs.unlinkSync(resizedPath);
+        try {
+          await fs.unlink(resizedPath);
+        } catch (unlinkError) {
+          console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
+        }
       } catch (processError) {
         console.error("Fehler bei der Bildverarbeitung:", processError);
         await interaction.editReply({
