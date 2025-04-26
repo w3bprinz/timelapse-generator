@@ -43,9 +43,14 @@ class RTSPStreamService {
         "-compression_level": "9",
         "-update": "1",
 
+        // Codec und Format
+        "-c:v": "libx264", // Verwende H.264 statt MPEG-1
+        "-pix_fmt": "yuv420p", // Standard Pixel-Format
+        "-preset": "veryfast", // Schnelle Kodierung
+
         // Performance-Optionen
         "-threads": "0",
-        "-r": "15",
+        "-r": "30", // Standard-Framerate
         "-b:v": "8000k",
         "-maxrate": "9000k",
         "-bufsize": "16000k",
