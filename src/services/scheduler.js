@@ -11,7 +11,7 @@ class Scheduler {
   setupSchedules() {
     // Screenshot alle 5 Minuten
     cron.schedule(
-      "*/5 * * * *",
+      "*/6 * * * *",
       async () => {
         try {
           await rtspService.takeScreenshot();
