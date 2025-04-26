@@ -41,12 +41,12 @@ class RTSPStreamService {
         "-flags": "low_delay",
         "-strict": "experimental",
 
-        // H.264-Dekodierung
-        "-c:v": "h264",
+        // HEVC-Dekodierung
+        "-c:v": "hevc",
         "-pix_fmt": "yuv420p",
         "-preset": "veryfast",
         "-tune": "zerolatency",
-        "-x264-params": [
+        "-x265-params": [
           "keyint=30",
           "min-keyint=30",
           "scenecut=0",
@@ -75,8 +75,8 @@ class RTSPStreamService {
       },
     });
 
-    // Warte kurz, bis der Stream stabil ist
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Warte länger, bis der Stream stabil ist
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
   stopStream() {
@@ -104,51 +104,76 @@ class RTSPStreamService {
   }
 
   async takeScreenshot() {
-    try {
-      // Starte den Stream
-      await this.startStream(process.env.RTSP_URL);
+    const timestamp = this.getBerlinTimestamp();
+    const filename = `screenshot_${timestamp}.png`;
+    const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
+    const finalPath = path.join(this.screenshotsPath, filename);
 
-      const timestamp = this.getBerlinTimestamp();
-      const filename = `screenshot_${timestamp}.jpg`;
-      const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
-      const finalPath = path.join(this.screenshotsPath, filename);
+    // Versuche bis zu 3 Mal, ein gutes Bild zu bekommen
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Versuch ${attempt}: Erstelle Screenshot...`);
 
-      // Erstelle Screenshot mit FFmpeg
-      const ffmpegCommand = [
-        "ffmpeg -y",
-        "-rtsp_transport tcp",
-        "-analyzeduration 10000000",
-        "-probesize 5000000",
-        `-i "${process.env.RTSP_URL}"`,
-        "-frames:v 1",
-        "-c:v h264",
-        "-preset veryfast",
-        "-tune zerolatency",
-        '-x264-params "keyint=30:min-keyint=30:scenecut=0:threads=4:sliced-threads=1:no-cabac=1:no-8x8dct=1:no-weightb=1:no-mbtree=1"',
-        `"${tempPath}"`,
-      ].join(" ");
+      try {
+        // Warte 1 Sekunde, um den Stream zu stabilisieren
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      await execPromise(ffmpegCommand);
+        // Erstelle Screenshot mit verbesserten Parametern
+        const ffmpegCommand = [
+          "ffmpeg -y",
+          "-rtsp_transport tcp",
+          "-analyzeduration 10000000",
+          "-probesize 5000000",
+          `-i "${process.env.RTSP_URL}"`,
+          "-frames:v 1",
+          '-vf "format=rgb24,setpts=PTS-STARTPTS"',
+          "-compression_level 9",
+          "-update 1",
+          `"${tempPath}"`,
+        ].join(" ");
 
-      // Verarbeite das Bild mit Sharp
-      await sharp(tempPath).jpeg({ quality: 100 }).toFile(finalPath);
+        await execPromise(ffmpegCommand);
 
-      // Lösche die temporäre Datei
-      fs.unlinkSync(tempPath);
+        // Überprüfe, ob das Bild gültig ist
+        if (fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
+          // Überprüfe die Bildqualität mit ffprobe
+          const ffprobeCommand = [
+            "ffprobe",
+            "-v error",
+            "-select_streams v:0",
+            "-show_entries stream=width,height",
+            "-of csv=p=0",
+            `"${tempPath}"`,
+          ].join(" ");
 
-      // Stoppe den Stream
-      this.stopStream();
+          const { stdout } = await execPromise(ffprobeCommand);
 
-      return {
-        filename,
-        filepath: finalPath,
-      };
-    } catch (error) {
-      // Stelle sicher, dass der Stream gestoppt wird, auch bei Fehlern
-      this.stopStream();
-      console.error("Fehler beim Erstellen des Screenshots:", error);
-      throw error;
+          if (stdout.trim()) {
+            // Bild ist gültig, verschiebe es an den endgültigen Ort
+            fs.renameSync(tempPath, finalPath);
+            console.log(`Screenshot erfolgreich erstellt: ${finalPath}`);
+
+            return {
+              filename,
+              filepath: finalPath,
+            };
+          }
+        }
+
+        // Warte 2 Sekunden vor dem nächsten Versuch
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error(`Fehler bei Versuch ${attempt}:`, error);
+        // Warte 2 Sekunden vor dem nächsten Versuch
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
+
+    // Lösche temporäre Datei, falls vorhanden
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+
+    throw new Error("Konnte keinen gültigen Screenshot erstellen");
   }
 
   async resizeImage(inputPath, outputPath, width = 800) {
