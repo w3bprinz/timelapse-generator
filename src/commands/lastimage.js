@@ -17,10 +17,10 @@ module.exports = {
         });
       }
 
-      // Hole alle JPG-Dateien und sortiere sie nach Datum
+      // Hole alle PNG-Dateien und sortiere sie nach Datum
       const files = fs
         .readdirSync(screenshotsPath)
-        .filter((file) => file.endsWith(".jpg"))
+        .filter((file) => file.endsWith(".png") && !file.startsWith("resized_"))
         .sort((a, b) => {
           return (
             fs.statSync(path.join(screenshotsPath, b)).mtime.getTime() -
@@ -45,20 +45,20 @@ module.exports = {
 
       while (currentSize > 10 * 1024 * 1024 && quality > 10) {
         quality -= 10;
-        await sharp(inputPath).jpeg({ quality: quality }).toFile(outputPath);
+        await sharp(inputPath).png({ quality: quality }).toFile(outputPath);
         currentSize = fs.statSync(outputPath).size;
       }
 
       // Sende das Bild
       await interaction.reply({
-        content: `Letztes aufgenommenes Bild (${new Date(fs.statSync(inputPath).mtime).toLocaleString("de-DE")})`,
+        content: `Letztes Bild (${latestFile}):`,
         files: [outputPath],
       });
 
-      // Lösche die temporäre Datei
+      // Lösche das temporäre Bild nach dem Senden
       fs.unlinkSync(outputPath);
     } catch (error) {
-      console.error("Fehler beim Verarbeiten des Bildes:", error);
+      console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
       await interaction.reply({
         content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
         ephemeral: true,
