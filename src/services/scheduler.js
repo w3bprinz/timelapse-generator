@@ -99,7 +99,7 @@ class Scheduler {
 
     // Timelapse-Erstellung um Mitternacht
     cron.schedule(
-      "15 0 * * *",
+      "20 0 * * *",
       async () => {
         try {
           const yesterday = new Date();
