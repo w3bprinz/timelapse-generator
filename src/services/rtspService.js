@@ -35,6 +35,9 @@ class RTSPStreamService {
       ffmpegOptions: {
         // RTSP-Optionen
         "-rtsp_transport": "tcp",
+        "-stimeout": "5000000",
+        "-reorder_queue_size": "0",
+        "-max_delay": "2000000",
         "-analyzeduration": "10000000",
         "-probesize": "5000000",
         "-fflags": "+nobuffer+fastseek+igndts",
@@ -44,30 +47,16 @@ class RTSPStreamService {
         // HEVC-Dekodierung
         "-c:v": "hevc",
         "-pix_fmt": "yuv420p",
-        "-preset": "veryfast",
+        "-preset": "ultrafast",
         "-tune": "zerolatency",
-        "-x265-params": [
-          "keyint=30",
-          "min-keyint=30",
-          "scenecut=0",
-          "threads=4",
-          "sliced-threads=1",
-          "no-cabac=1",
-          "no-8x8dct=1",
-          "no-weightb=1",
-          "no-mbtree=1",
-          "sync-lookahead=0",
-          "rc-lookahead=0",
-        ].join(":"),
+        "-x265-params": "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1",
 
         // Performance-Optionen
-        "-threads": "4",
+        "-threads": "1",
         "-r": "15",
         "-b:v": "4000k",
         "-maxrate": "5000k",
         "-bufsize": "8000k",
-        "-max_delay": "500000",
-        "-reorder_queue_size": "0",
 
         // Debug-Optionen
         "-stats": "",
@@ -115,20 +104,26 @@ class RTSPStreamService {
       console.log(`Versuch ${attempt}: Erstelle Screenshot...`);
 
       try {
-        // Warte 1 Sekunde, um den Stream zu stabilisieren
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Warte 2 Sekunden, um den Stream zu stabilisieren
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Erstelle Screenshot mit verbesserten Parametern
         const ffmpegCommand = [
           "ffmpeg -y",
           "-rtsp_transport tcp",
+          "-stimeout 5000000",
+          "-reorder_queue_size 0",
+          "-max_delay 2000000",
           "-analyzeduration 10000000",
           "-probesize 5000000",
           `-i "${process.env.RTSP_URL}"`,
           "-frames:v 1",
-          '-vf "format=rgb24,setpts=PTS-STARTPTS"',
-          "-compression_level 9",
-          "-update 1",
+          "-c:v hevc",
+          "-preset ultrafast",
+          "-tune zerolatency",
+          "-pix_fmt yuv420p",
+          '-x265-params "keyint=30:min-keyint=30:scenecut=0:no-open-gop=1:no-sao=1:no-strong-intra-smoothing=1"',
+          "-threads 1",
           `"${tempPath}"`,
         ].join(" ");
 
