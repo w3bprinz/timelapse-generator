@@ -20,8 +20,9 @@ class Scheduler {
     this.isProcessing = true;
     try {
       const result = await rtspService.takeScreenshot();
-      if (!result) {
-        throw new Error("Kein gültiger Screenshot erstellt");
+      if (!result || !result.filepath || !fs.existsSync(result.filepath)) {
+        console.error("Screenshot ist ungültig oder existiert nicht:", result);
+        return null;
       }
       return result;
     } catch (error) {
@@ -54,7 +55,7 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "40 8,22 * * *",
+      "45 8,22 * * *",
       async () => {
         try {
           const result = await this.processScreenshot();
