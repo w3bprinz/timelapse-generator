@@ -51,11 +51,12 @@ class RTSPStreamService {
       const ffmpegCommand = [
         "ffmpeg -y",
         "-rtsp_transport tcp",
-        "-analyzeduration 10000000",
-        "-probesize 5000000",
+        "-analyzeduration 50000000",
+        "-probesize 10000000",
         `-i "${process.env.RTSP_URL}"`,
         "-frames:v 1",
         "-c:v png", // Direkte PNG-Ausgabe
+        "-q:v 1", // Höchste Qualität für PNG
         "-f image2", // Bildformat
         "-pix_fmt rgb24", // RGB-Farbraum
         "-threads 1",
