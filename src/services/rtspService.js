@@ -33,16 +33,26 @@ class RTSPStreamService {
       streamUrl: rtspUrl,
       wsPort: 9999,
       ffmpegOptions: {
+        // Bewährte RTSP-Optionen
+        "-rtsp_transport": "tcp",
+        "-analyzeduration": "10000000",
+        "-probesize": "5000000",
+
+        // Video-Verarbeitung
+        "-vf": "format=rgb24,setpts=PTS-STARTPTS",
+        "-compression_level": "9",
+        "-update": "1",
+
+        // Performance-Optionen
+        "-threads": "0",
+        "-r": "15",
+        "-b:v": "8000k",
+        "-maxrate": "9000k",
+        "-bufsize": "16000k",
+
+        // Debug-Optionen
         "-stats": "",
-        "-r": 30,
-        "-q:v": "2",
-        "-preset": "ultrafast",
-        "-tune": "zerolatency",
-        "-c:v": "libx264",
-        "-pix_fmt": "yuv420p",
-        "-b:v": "5000k",
-        "-maxrate": "5000k",
-        "-bufsize": "10000k",
+        "-loglevel": "warning",
       },
     });
 
@@ -77,8 +87,21 @@ class RTSPStreamService {
     const finalPath = path.join(this.screenshotsPath, filename);
 
     try {
-      // Erstelle Screenshot mit FFmpeg
-      await execPromise(`ffmpeg -i ${process.env.RTSP_URL} -vframes 1 -q:v 2 -y ${tempPath}`);
+      // Erstelle Screenshot mit bewährten FFmpeg-Parametern
+      const ffmpegCommand = [
+        "ffmpeg -y",
+        "-rtsp_transport tcp",
+        "-analyzeduration 10000000",
+        "-probesize 5000000",
+        `-i "${process.env.RTSP_URL}"`,
+        "-frames:v 1",
+        '-vf "format=rgb24,setpts=PTS-STARTPTS"',
+        "-compression_level 9",
+        "-update 1",
+        `"${tempPath}"`,
+      ].join(" ");
+
+      await execPromise(ffmpegCommand);
 
       // Verarbeite das Bild mit Sharp und speichere es in einer neuen Datei
       await sharp(tempPath).jpeg({ quality: 100 }).toFile(finalPath);
