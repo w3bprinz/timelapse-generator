@@ -136,15 +136,15 @@ class RTSPStreamService {
       const screenshotsDir = this.screenshotsPath;
       const outputPath = path.join(this.timelapsePath, `timelapse_${dayString}.mp4`);
 
-      // Finde alle Screenshots für den angegebenen Tag
+      // Finde alle vorhandenen Screenshots
       const screenshots = fs
         .readdirSync(screenshotsDir)
-        .filter((file) => file.startsWith(`screenshot_${dayString}`) && file.endsWith(".png"))
+        .filter((file) => file.endsWith(".png"))
         .sort()
         .map((file) => path.join(screenshotsDir, file));
 
       if (screenshots.length === 0) {
-        throw new Error(`Keine Screenshots für ${dayString} gefunden`);
+        throw new Error("Keine Screenshots im Verzeichnis gefunden");
       }
 
       // Erstelle eine temporäre Datei mit allen Bildpfaden
@@ -169,6 +169,15 @@ class RTSPStreamService {
 
       // Lösche die temporäre Liste
       fs.unlinkSync(listFile);
+
+      // Lösche alle verwendeten Screenshots
+      for (const screenshot of screenshots) {
+        try {
+          fs.unlinkSync(screenshot);
+        } catch (error) {
+          console.error(`Fehler beim Löschen des Screenshots ${screenshot}:`, error);
+        }
+      }
 
       return outputPath;
     } catch (error) {
