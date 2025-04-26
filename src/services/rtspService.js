@@ -148,7 +148,7 @@ class RTSPStreamService {
       }
 
       // Erstelle eine temporäre Datei mit allen Bildpfaden
-      const listFile = path.join(this.timelapsePath, `list_${dayString}.txt`);
+      const listFile = path.join(this.timelapsePath, "screenshots_list.txt");
       fs.writeFileSync(listFile, screenshots.map((file) => `file '${file}'`).join("\n"));
 
       // Erstelle Timelapse mit FFmpeg
