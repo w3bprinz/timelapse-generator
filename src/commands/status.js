@@ -8,12 +8,7 @@ module.exports = {
   async execute(interaction) {
     try {
       // Berechne die Latenz
-      const sent = await interaction.reply({
-        content: "Berechne Status...",
-        fetchReply: true,
-        flags: MessageFlags.Ephemeral,
-      });
-      const latency = sent.createdTimestamp - interaction.createdTimestamp;
+      const latency = Math.round(interaction.client.ws.ping);
 
       // Hole Systeminformationen
       const totalMemory = os.totalmem();
@@ -40,7 +35,7 @@ module.exports = {
         .setDescription("Aktuelle Informationen über den Bot")
         .addFields(
           { name: "Ping", value: `${latency}ms`, inline: true },
-          { name: "API Latenz", value: `${Math.round(interaction.client.ws.ping)}ms`, inline: true },
+          { name: "API Latenz", value: `${latency}ms`, inline: true },
           { name: "Uptime", value: this.formatUptime(process.uptime()), inline: true },
           { name: "Speichernutzung", value: `${memoryUsage}%`, inline: true },
           { name: "Screenshots", value: `${screenshotCount}`, inline: true },
@@ -52,8 +47,8 @@ module.exports = {
         .setTimestamp()
         .setFooter({ text: "Timelapse Generator Bot" });
 
-      // Aktualisiere die Antwort mit dem Embed
-      await interaction.editReply({
+      // Sende die Antwort mit dem Embed
+      await interaction.reply({
         content: "",
         embeds: [embed],
         flags: MessageFlags.Ephemeral,
