@@ -6,16 +6,35 @@ const fs = require("fs").promises;
 class Scheduler {
   constructor(client) {
     this.client = client;
+    this.isProcessing = false;
     this.setupSchedules();
   }
 
+  async processScreenshot() {
+    if (this.isProcessing) {
+      console.log("Screenshot-Verarbeitung läuft bereits, überspringe...");
+      return;
+    }
+
+    this.isProcessing = true;
+    try {
+      const result = await rtspService.takeScreenshot();
+      if (!result || !result.filepath) {
+        throw new Error("Kein gültiger Screenshot erstellt");
+      }
+      return result;
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
   setupSchedules() {
-    // Screenshot alle 5 Minuten
+    // Screenshot alle 6 Minuten
     cron.schedule(
       "*/6 * * * *",
       async () => {
         try {
-          await rtspService.takeScreenshot();
+          await this.processScreenshot();
         } catch (error) {
           console.error("Fehler beim Erstellen des Screenshots:", error);
         }
@@ -27,15 +46,11 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "22 8,22 * * *",
+      "30 8,22 * * *",
       async () => {
         try {
           const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-          const result = await rtspService.takeScreenshot();
-
-          if (!result || !result.filepath) {
-            throw new Error("Kein gültiger Screenshot erstellt");
-          }
+          const result = await this.processScreenshot();
 
           // Bild für Discord optimieren
           const optimizedPath = await rtspService.optimizeForDiscord(result.filepath);
@@ -53,7 +68,9 @@ class Scheduler {
 
           // Lösche das temporäre optimierte Bild
           try {
-            await fs.unlink(optimizedPath);
+            if (fs.existsSync(optimizedPath)) {
+              await fs.unlink(optimizedPath);
+            }
           } catch (unlinkError) {
             console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
           }

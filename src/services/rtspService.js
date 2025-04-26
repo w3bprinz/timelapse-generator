@@ -87,7 +87,8 @@ class RTSPStreamService {
   }
 
   async optimizeForDiscord(imagePath) {
-    const discordPath = path.join(this.screenshotsPath, "discord_temp.png");
+    const timestamp = this.getBerlinTimestamp();
+    const discordPath = path.join(this.screenshotsPath, `discord_temp_${timestamp}.png`);
 
     try {
       // Optimiere das Bild für Discord
