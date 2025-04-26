@@ -1,7 +1,7 @@
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { channelId } = require("../config");
+const { channelId, rtspUrl, rtspUsername, rtspPassword } = require("../config");
 
 // Erstellt einen Screenshot vom RTSP-Stream
 async function createScreenshot() {
@@ -9,8 +9,11 @@ async function createScreenshot() {
   const filename = `screenshot_${timestamp}.jpg`;
   const filepath = path.join("/app/screenshots", filename);
 
+  // Erstelle die RTSP-URL mit Anmeldedaten
+  const authUrl = rtspUrl.replace("rtsp://", `rtsp://${rtspUsername}:${rtspPassword}@`);
+
   return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", ["-i", process.env.RTSP_URL, "-vframes", "1", "-q:v", "2", filepath]);
+    const ffmpeg = spawn("ffmpeg", ["-i", authUrl, "-vframes", "1", "-q:v", "2", filepath]);
 
     ffmpeg.on("close", (code) => {
       if (code === 0) {
