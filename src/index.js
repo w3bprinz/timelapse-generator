@@ -50,11 +50,8 @@ client.on("interactionCreate", async (interaction) => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: "Es gab einen Fehler bei der Ausführung dieses Befehls!",
-      ephemeral: true,
-    });
+    console.error("Unbehandelter Fehler im Command:", error);
+    // Keine Antwort mehr hier, da der Command selbst für die Fehlerbehandlung zuständig ist
   }
 });
 
