@@ -1,7 +1,8 @@
 const cron = require("node-cron");
 const rtspService = require("./rtspService");
 const { Client } = require("discord.js");
-const fs = require("fs").promises;
+const fs = require("fs");
+const fsPromises = require("fs").promises;
 
 class Scheduler {
   constructor(client) {
@@ -19,7 +20,7 @@ class Scheduler {
     this.isProcessing = true;
     try {
       const result = await rtspService.takeScreenshot();
-      if (!result || !result.filepath) {
+      if (!result) {
         throw new Error("Kein gültiger Screenshot erstellt");
       }
       return result;
@@ -53,7 +54,7 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "35 8,22 * * *",
+      "40 8,22 * * *",
       async () => {
         try {
           const result = await this.processScreenshot();
@@ -81,7 +82,7 @@ class Scheduler {
           // Lösche das temporäre optimierte Bild
           try {
             if (fs.existsSync(optimizedPath)) {
-              await fs.unlink(optimizedPath);
+              await fsPromises.unlink(optimizedPath);
             }
           } catch (unlinkError) {
             console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
