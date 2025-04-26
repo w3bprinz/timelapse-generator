@@ -8,9 +8,9 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // Sende zuerst eine "Wird verarbeitet..." Nachricht
+      // Sende sofort eine Antwort
       await interaction.reply({
-        content: "Verarbeite das letzte Bild...",
+        content: "Suche nach dem letzten Bild...",
       });
 
       const screenshotsPath = "/app/screenshots";
@@ -43,6 +43,11 @@ module.exports = {
 
       const latestFile = files[0];
       const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
+
+      // Aktualisiere die Nachricht
+      await interaction.editReply({
+        content: "Verarbeite das Bild...",
+      });
 
       // Verkleinere das Bild
       await sharp(latestFile.path)
