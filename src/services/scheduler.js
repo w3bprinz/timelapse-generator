@@ -27,7 +27,7 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "15 8,22 * * *",
+      "22 8,22 * * *",
       async () => {
         try {
           const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
@@ -37,9 +37,8 @@ class Scheduler {
             throw new Error("Kein gültiger Screenshot erstellt");
           }
 
-          // Bild verkleinern
-          const resizedPath = result.filepath.replace(".png", "_resized.png");
-          await rtspService.resizeImage(result.filepath, resizedPath);
+          // Bild für Discord optimieren
+          const optimizedPath = await rtspService.optimizeForDiscord(result.filepath);
 
           const berlinTime = new Date().toLocaleTimeString("de-DE", {
             timeZone: "Europe/Berlin",
@@ -49,12 +48,12 @@ class Scheduler {
 
           await channel.send({
             content: `Täglicher Screenshot (${berlinTime})`,
-            files: [resizedPath],
+            files: [optimizedPath],
           });
 
-          // Lösche das temporäre verkleinerte Bild
+          // Lösche das temporäre optimierte Bild
           try {
-            await fs.unlink(resizedPath);
+            await fs.unlink(optimizedPath);
           } catch (unlinkError) {
             console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
           }
