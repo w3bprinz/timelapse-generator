@@ -1,73 +1,74 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("lastimage").setDescription("Postet das letzte aufgenommene Bild"),
+  data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
+
   async execute(interaction) {
     try {
+      // Sende zuerst eine "Wird verarbeitet..." Nachricht
+      await interaction.reply({
+        content: "Verarbeite das letzte Bild...",
+      });
+
       const screenshotsPath = "/app/screenshots";
 
-      // Prüfe ob der Screenshot-Ordner existiert
+      // Prüfe, ob der Screenshot-Ordner existiert
       if (!fs.existsSync(screenshotsPath)) {
-        return await interaction.reply({
+        await interaction.editReply({
           content: "Keine Screenshots gefunden!",
-          flags: MessageFlags.Ephemeral,
         });
+        return;
       }
 
-      // Hole alle PNG-Dateien und sortiere sie nach Datum
+      // Lese alle PNG-Dateien und sortiere sie nach Änderungsdatum
       const files = fs
         .readdirSync(screenshotsPath)
-        .filter((file) => file.endsWith(".png") && !file.startsWith("resized_"))
-        .sort((a, b) => {
-          return (
-            fs.statSync(path.join(screenshotsPath, b)).mtime.getTime() -
-            fs.statSync(path.join(screenshotsPath, a)).mtime.getTime()
-          );
-        });
+        .filter((file) => file.endsWith(".png"))
+        .map((file) => ({
+          name: file,
+          path: path.join(screenshotsPath, file),
+          time: fs.statSync(path.join(screenshotsPath, file)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.time - a.time);
 
       if (files.length === 0) {
-        return await interaction.reply({
+        await interaction.editReply({
           content: "Keine Screenshots gefunden!",
-          flags: MessageFlags.Ephemeral,
         });
+        return;
       }
 
       const latestFile = files[0];
-      const inputPath = path.join(screenshotsPath, latestFile);
-      const outputPath = path.join(screenshotsPath, `resized_${latestFile}`);
+      const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
 
-      // Verkleinere das Bild direkt auf eine kleinere Größe
-      await sharp(inputPath)
-        .resize(1920, 1080, { fit: "inside", withoutEnlargement: true })
-        .png({ quality: 100 })
-        .toFile(outputPath);
+      // Verkleinere das Bild
+      await sharp(latestFile.path)
+        .resize(1920, 1080, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .toFile(resizedPath);
 
-      // Lese die Datei in einen Buffer
-      const fileBuffer = fs.readFileSync(outputPath);
-
-      // Sende das Bild mit dem Buffer
-      await interaction.reply({
-        content: `Letztes Bild (${latestFile}):`,
-        files: [
-          {
-            attachment: fileBuffer,
-            name: latestFile,
-          },
-        ],
-        flags: MessageFlags.Ephemeral,
+      // Sende das verkleinerte Bild
+      await interaction.editReply({
+        content: "Hier ist das letzte aufgenommene Bild:",
+        files: [resizedPath],
       });
 
-      // Lösche das temporäre Bild nach dem Senden
-      fs.unlinkSync(outputPath);
+      // Lösche das temporäre verkleinerte Bild
+      fs.unlinkSync(resizedPath);
     } catch (error) {
       console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
       if (!interaction.replied) {
         await interaction.reply({
           content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
-          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        await interaction.editReply({
+          content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
         });
       }
     }
