@@ -26,7 +26,7 @@ class Scheduler {
 
     // Screenshot-Posting um 8 und 20 Uhr
     cron.schedule(
-      "0 8,20 * * *",
+      "0 8,21 * * *",
       async () => {
         try {
           const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
