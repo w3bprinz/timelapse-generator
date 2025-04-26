@@ -17,11 +17,11 @@ module.exports = {
     const memoryUsage = ((usedMemory / totalMemory) * 100).toFixed(2);
 
     // Hole Screenshot-Informationen
-    const screenshotsPath = path.join(__dirname, "../../screenshots");
-    const timelapsePath = path.join(__dirname, "../../timelapse");
+    const screenshotsPath = "/app/screenshots";
+    const timelapsePath = "/app/timelapse";
 
     const screenshotCount = fs.existsSync(screenshotsPath)
-      ? fs.readdirSync(screenshotsPath).filter((file) => file.endsWith(".jpg")).length
+      ? fs.readdirSync(screenshotsPath).filter((file) => file.endsWith(".png")).length
       : 0;
 
     const timelapseCount = fs.existsSync(timelapsePath)
@@ -55,8 +55,7 @@ module.exports = {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    return `${days}d ${hours}h ${minutes}m ${secs}s`;
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${days}d ${hours}h ${minutes}m ${remainingSeconds}s`;
   },
 };
