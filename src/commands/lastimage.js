@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs").promises;
+const fs = require("fs").promises; // <-- Promises-API benutzen
 const path = require("path");
 const sharp = require("sharp");
 
@@ -7,80 +7,70 @@ module.exports = {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
 
   async execute(interaction) {
-    // Da die Verarbeitung länger als 3 Sekunden dauern kann, verwenden wir deferReply
     await interaction.deferReply();
 
+    const screenshotsPath = "/app/screenshots";
+
     try {
-      const screenshotsPath = "/app/screenshots";
-
-      // Prüfe, ob der Screenshot-Ordner existiert
-      try {
-        await fs.access(screenshotsPath);
-      } catch {
-        await interaction.editReply({
-          content: "Keine Screenshots gefunden!",
-        });
-        return;
-      }
-
-      // Lese alle PNG-Dateien und sortiere sie nach Änderungsdatum
-      const files = (await fs.readdir(screenshotsPath))
-        .filter((file) => file.endsWith(".png"))
-        .map((file) => ({
-          name: file,
-          path: path.join(screenshotsPath, file),
-          time: fs.stat(path.join(screenshotsPath, file)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.time - a.time);
-
-      if (files.length === 0) {
-        await interaction.editReply({
-          content: "Keine Screenshots gefunden!",
-        });
-        return;
-      }
-
-      // Aktualisiere die Nachricht
-      await interaction.editReply({
-        content: "Verarbeite das Bild...",
+      // Prüfen, ob Screenshot-Ordner existiert
+      await fs.access(screenshotsPath).catch(() => {
+        throw new Error("Kein Screenshot-Ordner gefunden!");
       });
 
-      // Verarbeite das Bild
-      const latestFile = files[0];
+      // Dateien lesen und nach Änderungsdatum sortieren
+      const allFiles = await fs.readdir(screenshotsPath);
+      const pngFiles = [];
+
+      for (const file of allFiles) {
+        if (file.endsWith(".png")) {
+          const filePath = path.join(screenshotsPath, file);
+          const stats = await fs.stat(filePath);
+          pngFiles.push({
+            name: file,
+            path: filePath,
+            time: stats.mtime.getTime(),
+          });
+        }
+      }
+
+      if (pngFiles.length === 0) {
+        await interaction.editReply({
+          content: "Keine Screenshots gefunden!",
+        });
+        return;
+      }
+
+      // Neueste Datei bestimmen
+      pngFiles.sort((a, b) => b.time - a.time);
+      const latestFile = pngFiles[0];
       const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
 
-      try {
-        // Verkleinere das Bild
-        await sharp(latestFile.path)
-          .resize(1920, 1080, {
-            fit: "inside",
-            withoutEnlargement: true,
-          })
-          .toFile(resizedPath);
+      // Bild verkleinern
+      await sharp(latestFile.path)
+        .resize(1920, 1080, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .toFile(resizedPath);
 
-        // Sende das verkleinerte Bild
-        await interaction.editReply({
-          content: "Hier ist das letzte aufgenommene Bild:",
-          files: [resizedPath],
-        });
-
-        // Lösche das temporäre verkleinerte Bild
-        try {
-          await fs.unlink(resizedPath);
-        } catch (unlinkError) {
-          console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
-        }
-      } catch (processError) {
-        console.error("Fehler bei der Bildverarbeitung:", processError);
-        await interaction.editReply({
-          content: "Es gab einen Fehler bei der Bildverarbeitung!",
-        });
-      }
-    } catch (error) {
-      console.error("Fehler beim Verarbeiten des letzten Bildes:", error);
+      // Antwort mit Bild schicken
       await interaction.editReply({
-        content: "Es gab einen Fehler beim Verarbeiten des Bildes!",
+        content: "Hier ist das letzte aufgenommene Bild:",
+        files: [resizedPath],
       });
+
+      // Aufräumen
+      await fs.unlink(resizedPath);
+    } catch (error) {
+      console.error("Fehler:", error.message || error);
+      try {
+        await interaction.editReply({
+          content: `Fehler: ${error.message || "Unbekannter Fehler"}`,
+        });
+      } catch (editError) {
+        console.error("Konnte Fehler nicht an Interaction senden:", editError);
+        // Hier nichts mehr tun, Interaction ist dann halt tot
+      }
     }
   },
 };
