@@ -14,8 +14,7 @@ class Scheduler {
       "*/5 * * * *",
       async () => {
         try {
-          const { filepath } = await rtspService.takeScreenshot();
-          console.log(`Screenshot erstellt: ${filepath}`);
+          await rtspService.takeScreenshot();
         } catch (error) {
           console.error("Fehler beim Erstellen des Screenshots:", error);
         }

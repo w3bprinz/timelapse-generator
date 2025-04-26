@@ -36,7 +36,8 @@ class RTSPStreamService {
       })
       .replace(/(\d{2})\.(\d{2})\.(\d{4})/, "$3-$2-$1")
       .replace(/(\d{2}):(\d{2}):(\d{2})/, "$1-$2-$3")
-      .replace(/\s+/g, "_");
+      .replace(/\s+/g, "_")
+      .replace(/,/g, "");
   }
 
   async takeScreenshot() {

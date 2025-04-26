@@ -60,7 +60,6 @@ client.on("interactionCreate", async (interaction) => {
 // Bot ist bereit
 client.once("ready", () => {
   console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
-  console.log("Bot ist online!");
 
   // Initialisiere den Scheduler
   new Scheduler(client);
