@@ -18,7 +18,7 @@ module.exports = {
 
       // Hole Screenshot-Informationen
       const screenshotsPath = "/app/screenshots";
-      const timelapsePath = "/app/timelapse";
+      const timelapsePath = "/app/timelapses";
 
       const screenshotCount = fs.existsSync(screenshotsPath)
         ? fs.readdirSync(screenshotsPath).filter((file) => file.endsWith(".png")).length

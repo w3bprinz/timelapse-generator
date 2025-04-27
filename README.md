@@ -47,8 +47,8 @@ Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Video
    - Volumes:
      - Container Path: `/app/screenshots`
      - Host Path: `/mnt/user/appdata/timelapse-generator/screenshots`
-     - Container Path: `/app/timelapse`
-     - Host Path: `/mnt/user/appdata/timelapse-generator/timelapse`
+     - Container Path: `/app/timelapses`
+     - Host Path: `/mnt/user/appdata/timelapse-generator/timelapses`
    - Environment Variables:
      - DISCORD_TOKEN
      - CLIENT_ID
@@ -70,7 +70,7 @@ Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Video
 - Screenshots werden unter `/app/screenshots/` gespeichert
   - Format: `screenshot_YYYY-MM-DD_HH-MM-SS.png`
   - Beispiel: `screenshot_2024-04-26_14-20-01.png`
-- Timelapse-Videos werden unter `/app/timelapse/` gespeichert
+- Timelapse-Videos werden unter `/app/timelapses/` gespeichert
   - Format: `timelapse_YYYY-MM-DD.mp4`
   - Beispiel: `timelapse_2024-04-26.mp4`
 - Screenshots werden nach erfolgreicher Timelapse-Erstellung automatisch gelöscht

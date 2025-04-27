@@ -8,7 +8,7 @@ const execPromise = util.promisify(exec);
 class RTSPStreamService {
   constructor() {
     this.screenshotsPath = path.join(__dirname, "../../screenshots");
-    this.timelapsePath = path.join(__dirname, "../../timelapse");
+    this.timelapsePath = path.join(__dirname, "../../timelapses");
     this.ensureDirectories();
   }
 
