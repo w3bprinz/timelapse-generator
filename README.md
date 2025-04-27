@@ -42,7 +42,7 @@ Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Video
 1. Füge ein neues Docker-Container hinzu
 2. Wähle "Add Container"
 3. Konfiguriere den Container:
-   - Repository: `ghcr.io/your-username/timelapse-generator:latest`
+   - Repository: `ghcr.io/w3bprinz/timelapse-generator:latest`
    - Network Type: Bridge
    - Volumes:
      - Container Path: `/app/screenshots`
