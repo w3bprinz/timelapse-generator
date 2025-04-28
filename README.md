@@ -1,90 +1,87 @@
-# Timelapse Generator
+# Timelapse Generator Bot
 
 Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Videos generiert.
 
-## Funktionen
+## Features
 
-- Automatische Screenshot-Erstellung alle 5 Minuten
+- Automatische Screenshot-Erstellung alle 6 Minuten
 - Tägliche Screenshot-Posts um 8 und 20 Uhr
 - Automatische Timelapse-Erstellung um Mitternacht
-- Slash-Commands für die Konfiguration
-- Automatische Command-Registrierung
+- Discord-Integration für Screenshot-Posts
 
 ## Installation
 
-### Lokale Installation
+1. Klone das Repository
+2. Installiere die Abhängigkeiten mit `npm install`
+3. Erstelle eine `.env` Datei mit folgenden Variablen:
 
-1. Klone dieses Repository
-2. Installiere die Abhängigkeiten:
-   ```bash
-   npm install
-   ```
-3. Erstelle eine `.env` Datei mit folgenden Werten:
-   ```
-   DISCORD_TOKEN=your_discord_token_here
-   CLIENT_ID=your_client_id_here
-   GUILD_ID=your_guild_id_here
-   RTSP_URL=your_rtsp_stream_url_here
-   SCREENSHOT_CHANNEL_ID=your_channel_id_here
-   OWNER_ID=your_discord_user_id_here
-   ```
-4. Registriere die Slash-Commands:
-   ```bash
-   npm run deploy
-   ```
-5. Starte den Bot:
-   ```bash
-   npm start
-   ```
+```env
+DISCORD_TOKEN=your_discord_token_here
+CLIENT_ID=your_client_id_here
+GUILD_ID=your_guild_id_here
+SCREENSHOT_CHANNEL_ID=your_channel_id_here
+RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
+```
 
-### Docker Installation (Unraid)
+## Docker Installation
 
-1. Füge ein neues Docker-Container hinzu
-2. Wähle "Add Container"
-3. Konfiguriere den Container:
-   - Repository: `ghcr.io/w3bprinz/timelapse-generator:latest`
-   - Network Type: Bridge
-   - Volumes:
-     - Container Path: `/app/screenshots`
-     - Host Path: `/mnt/user/appdata/timelapse-generator/screenshots`
-     - Container Path: `/app/timelapses`
-     - Host Path: `/mnt/user/appdata/timelapse-generator/timelapses`
-   - Environment Variables:
-     - DISCORD_TOKEN
-     - CLIENT_ID
-     - GUILD_ID
-     - RTSP_URL
-     - SCREENSHOT_CHANNEL_ID
-     - OWNER_ID
+1. Klone das Repository
+2. Erstelle eine `.env` Datei wie oben beschrieben
+3. Starte den Container mit `docker-compose up -d`
+
+### Volumes
+
+- Screenshots:
+  - Container Path: `/app/screenshots`
+  - Host Path: `/mnt/user/appdata/timelapse-generator/screenshots`
+- Timelapses:
+  - Container Path: `/app/timelapses`
+  - Host Path: `/mnt/user/appdata/timelapse-generator/timelapses`
+- Konfiguration:
+  - Container Path: `/app/.env`
+  - Host Path: `/mnt/user/appdata/timelapse-generator/.env`
+
+### Umgebungsvariablen
+
+- DISCORD_TOKEN
+- CLIENT_ID
+- GUILD_ID
+- SCREENSHOT_CHANNEL_ID
+- RTSP_URL
 
 ## Verwendung
 
-### Slash-Commands
+### Commands
 
-- `/config` - Konfiguriere den RTSP-Stream und den Screenshot-Channel
-- `/purge [anzahl]` - Löscht Nachrichten (nur für Bot-Owner)
-- `/lastimage` - Zeigt das letzte aufgenommene Bild an
+- `/status` - Zeige den aktuellen Status des Bots
+- `/lastimage` - Zeige das letzte erstellte Bild
+- `/purge [anzahl]` - Lösche Nachrichten (nur für Bot-Owner)
 
-## Dateistruktur
+### Dateistruktur
 
 - Screenshots werden unter `/app/screenshots/` gespeichert
-  - Format: `screenshot_YYYY-MM-DD_HH-MM-SS.png`
-  - Beispiel: `screenshot_2024-04-26_14-20-01.png`
-- Timelapse-Videos werden unter `/app/timelapses/` gespeichert
-  - Format: `timelapse_YYYY-MM-DD.mp4`
-  - Beispiel: `timelapse_2024-04-26.mp4`
+- Format: `screenshot_YYYY-MM-DD_HH-MM-SS.png`
+- Beispiel: `screenshot_2024-04-26_14-20-01.png`
+
+### Timelapse
+
+- Timelapses werden unter `/app/timelapses/` gespeichert
+- Format: `timelapse_YYYY-MM-DD.mp4`
 - Screenshots werden nach erfolgreicher Timelapse-Erstellung automatisch gelöscht
 
-## Voraussetzungen
+## Entwicklung
 
-- Node.js 16.9.0 oder höher (für lokale Installation)
-- FFmpeg für die RTSP-Stream-Verarbeitung
-- Ein Discord-Bot-Token
-- Ein RTSP-Stream
+### Lokale Entwicklung
 
-## Docker Build
+1. Installiere Node.js und npm
+2. Klone das Repository
+3. Installiere die Abhängigkeiten mit `npm install`
+4. Starte den Bot mit `npm start`
 
-Das Docker-Image wird automatisch bei jedem Push zum Master-Branch erstellt und auf GitHub Container Registry (ghcr.io) veröffentlicht.
+### Docker Entwicklung
+
+1. Baue das Image mit `docker build -t timelapse-generator .`
+2. Starte den Container mit `docker run -d --name timelapse-generator timelapse-generator`
 
 ## Lizenz
 
@@ -96,10 +93,8 @@ Erstellen Sie eine `.env` Datei mit folgenden Einstellungen:
 
 ```env
 DISCORD_TOKEN=ihr_discord_token
-CHANNEL_ID=ihre_channel_id
-SCREENSHOT_INTERVAL=300000
-POST_TIMES=12:00,18:00
-RTSP_URL=rtsp://ihre_kamera_ip
-RTSP_USERNAME=ihr_benutzername
-RTSP_PASSWORD=ihr_passwort
+CLIENT_ID=ihre_client_id
+GUILD_ID=ihre_guild_id
+SCREENSHOT_CHANNEL_ID=ihre_channel_id
+RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
 ```
