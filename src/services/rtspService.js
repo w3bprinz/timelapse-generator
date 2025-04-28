@@ -136,12 +136,10 @@ class RTSPStreamService {
       const screenshotsDir = this.screenshotsPath;
       const outputPath = path.join(this.timelapsePath, `timelapse_${dayString}.mp4`);
 
-      // Finde alle vorhandenen Screenshots
+      // Zähle die Screenshots für das Logging
       const screenshots = fs
         .readdirSync(screenshotsDir)
-        .filter((file) => file.endsWith(".png") && file.startsWith("screenshot_"))
-        .sort()
-        .map((file) => path.join(screenshotsDir, file));
+        .filter((file) => file.endsWith(".png") && file.startsWith("screenshot_"));
 
       console.log(`Gefundene Screenshots: ${screenshots.length}`);
       if (screenshots.length === 0) {
@@ -172,11 +170,11 @@ class RTSPStreamService {
         throw new Error("Timelapse wurde nicht erstellt");
       }
 
-      // Lösche alle verwendeten Screenshots
+      // Lösche alle Screenshots
       let deletedCount = 0;
       for (const screenshot of screenshots) {
         try {
-          fs.unlinkSync(screenshot);
+          fs.unlinkSync(path.join(screenshotsDir, screenshot));
           deletedCount++;
         } catch (error) {
           console.error(`Fehler beim Löschen des Screenshots ${screenshot}:`, error);
