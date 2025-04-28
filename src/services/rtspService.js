@@ -139,45 +139,50 @@ class RTSPStreamService {
       // Finde alle vorhandenen Screenshots
       const screenshots = fs
         .readdirSync(screenshotsDir)
-        .filter((file) => file.endsWith(".png"))
+        .filter((file) => file.endsWith(".png") && file.startsWith("screenshot_"))
         .sort()
         .map((file) => path.join(screenshotsDir, file));
 
+      console.log(`Gefundene Screenshots: ${screenshots.length}`);
       if (screenshots.length === 0) {
         throw new Error("Keine Screenshots im Verzeichnis gefunden");
       }
 
-      // Erstelle eine temporäre Datei mit allen Bildpfaden
-      const listFile = path.join(this.timelapsePath, "screenshots_list.txt");
-      fs.writeFileSync(listFile, screenshots.map((file) => `file '${file}'`).join("\n"));
-
       // Erstelle Timelapse mit FFmpeg
       const ffmpegCommand = [
         "ffmpeg -y",
-        "-f concat",
-        "-safe 0",
-        `-i "${listFile}"`,
+        "-framerate 12",
+        "-pattern_type glob",
+        `-i "${screenshotsDir}/screenshot_*.png"`,
         "-c:v libx264",
-        "-preset medium",
-        "-crf 23",
+        "-preset slow",
+        "-crf 18",
         "-pix_fmt yuv420p",
-        "-r 30",
+        "-movflags +faststart",
         `"${outputPath}"`,
       ].join(" ");
 
       await execPromise(ffmpegCommand);
 
-      // Lösche die temporäre Liste
-      fs.unlinkSync(listFile);
+      // Überprüfe die Ausgabedatei
+      if (fs.existsSync(outputPath)) {
+        const stats = fs.statSync(outputPath);
+        console.log(`Timelapse erfolgreich erstellt: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+      } else {
+        throw new Error("Timelapse wurde nicht erstellt");
+      }
 
       // Lösche alle verwendeten Screenshots
+      let deletedCount = 0;
       for (const screenshot of screenshots) {
         try {
           fs.unlinkSync(screenshot);
+          deletedCount++;
         } catch (error) {
           console.error(`Fehler beim Löschen des Screenshots ${screenshot}:`, error);
         }
       }
+      console.log(`Gelöschte Screenshots: ${deletedCount} von ${screenshots.length}`);
 
       return outputPath;
     } catch (error) {
