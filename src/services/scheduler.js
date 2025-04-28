@@ -33,8 +33,33 @@ class Scheduler {
     }
   }
 
+  async postToDiscord(filepath) {
+    try {
+      const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
+      const optimizedPath = await rtspService.optimizeForDiscord(filepath);
+
+      const berlinTime = new Date().toLocaleTimeString("de-DE", {
+        timeZone: "Europe/Berlin",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      await channel.send({
+        content: `Täglicher Screenshot (${berlinTime})`,
+        files: [optimizedPath],
+      });
+
+      // Lösche das temporäre optimierte Bild
+      if (fs.existsSync(optimizedPath)) {
+        await fsPromises.unlink(optimizedPath);
+      }
+    } catch (error) {
+      console.error("Fehler beim Posten des Screenshots:", error);
+    }
+  }
+
   setupSchedules() {
-    // Screenshot alle 6 Minuten
+    // Screenshot alle 6 Minuten mit optionalem Posting
     cron.schedule(
       "*/6 * * * *",
       async () => {
@@ -44,52 +69,17 @@ class Scheduler {
             console.log("Kein Screenshot erstellt, überspringe...");
             return;
           }
+
+          // Prüfe, ob es Zeit für ein Posting ist (8:03 oder 20:03)
+          const now = new Date();
+          const hour = now.getHours();
+          const minute = now.getMinutes();
+
+          if ((hour === 8 || hour === 20) && minute === 3) {
+            await this.postToDiscord(result.filepath);
+          }
         } catch (error) {
           console.error("Fehler beim Erstellen des Screenshots:", error);
-        }
-      },
-      {
-        timezone: "Europe/Berlin",
-      }
-    );
-
-    // Screenshot-Posting um 8 und 20 Uhr
-    cron.schedule(
-      "3 8,20 * * *",
-      async () => {
-        try {
-          const result = await this.processScreenshot();
-          if (!result) {
-            console.log("Kein Screenshot erstellt, überspringe...");
-            return;
-          }
-
-          const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-
-          // Bild für Discord optimieren
-          const optimizedPath = await rtspService.optimizeForDiscord(result.filepath);
-
-          const berlinTime = new Date().toLocaleTimeString("de-DE", {
-            timeZone: "Europe/Berlin",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-
-          await channel.send({
-            content: `Täglicher Screenshot (${berlinTime})`,
-            files: [optimizedPath],
-          });
-
-          // Lösche das temporäre optimierte Bild
-          try {
-            if (fs.existsSync(optimizedPath)) {
-              await fsPromises.unlink(optimizedPath);
-            }
-          } catch (unlinkError) {
-            console.error("Fehler beim Löschen der temporären Datei:", unlinkError);
-          }
-        } catch (error) {
-          console.error("Fehler beim Posten des Screenshots:", error);
         }
       },
       {
