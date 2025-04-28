@@ -70,12 +70,12 @@ class Scheduler {
             return;
           }
 
-          // Prüfe, ob es Zeit für ein Posting ist (8:03 oder 20:03)
+          // Prüfe, ob es Zeit für ein Posting ist (8:00 oder 20:00)
           const now = new Date();
           const hour = now.getHours();
           const minute = now.getMinutes();
 
-          if ((hour === 8 || hour === 20) && minute === 3) {
+          if ((hour === 8 || hour === 20) && minute === 0) {
             await this.postToDiscord(result.filepath);
           }
         } catch (error) {
