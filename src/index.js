@@ -40,7 +40,7 @@ for (const file of eventFiles) {
 
 // Bot ist bereit
 client.once("ready", async () => {
-  console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
+  console.log("Bot ist bereit!");
 
   // Deploy Commands
   try {
