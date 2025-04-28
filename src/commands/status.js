@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 const os = require("os");
 const fs = require("fs");
-const path = require("path");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("status").setDescription("Zeigt den aktuellen Status des Bots an"),
