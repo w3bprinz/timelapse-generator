@@ -59,9 +59,9 @@ class Scheduler {
   }
 
   setupSchedules() {
-    // Screenshot alle 6 Minuten mit optionalem Posting
+    // Screenshot alle 5 Minuten mit optionalem Posting
     cron.schedule(
-      "*/6 * * * *",
+      "*/5 * * * *",
       async () => {
         try {
           const result = await this.processScreenshot();
@@ -89,7 +89,7 @@ class Scheduler {
 
     // Timelapse-Erstellung um Mitternacht
     cron.schedule(
-      "10 0 * * *",
+      "0 0 * * *",
       async () => {
         try {
           const yesterday = new Date();
