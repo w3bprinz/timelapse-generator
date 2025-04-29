@@ -2,11 +2,11 @@ const Scheduler = require("../services/scheduler");
 
 // Status-Nachrichten für den Rotator
 const statusMessages = [
-  { type: "WATCHING", text: "🌱 Pflanzenwachstum überwachen" },
-  { type: "PLAYING", text: "📸 Screenshots aufnehmen" },
-  { type: "PLAYING", text: "⏱️ Timelapse erstellen" },
-  { type: "WATCHING", text: "🌿 Daily Weed Pictures" },
-  { type: "WATCHING", text: "📊 Wachstumsstatistiken" },
+  { type: ActivityType.Watching, text: "🌱 Pflanzenwachstum überwachen" },
+  { type: ActivityType.Playing, text: "📸 Screenshots aufnehmen" },
+  { type: ActivityType.Playing, text: "⏱️ Timelapse erstellen" },
+  { type: ActivityType.Watching, text: "🌿 Daily Weed Pictures" },
+  { type: ActivityType.Watching, text: "📊 Wachstumsstatistiken" },
 ];
 
 module.exports = {
@@ -18,16 +18,17 @@ module.exports = {
     // Initialisiere den Scheduler
     new Scheduler(client);
 
-    // Status-Rotator
-    let statusIndex = 0;
-    setInterval(() => {
+    // Setze initialen Status nach kurzer Verzögerung
+    setTimeout(() => {
       const status = statusMessages[statusIndex];
       client.user.setActivity(status.text, { type: status.type });
-      statusIndex = (statusIndex + 1) % statusMessages.length;
-    }, 30000); // Ändere Status alle 30 Sekunden
+    }, 1000);
 
-    // Setze initialen Status
-    const initialStatus = statusMessages[0];
-    client.user.setActivity(initialStatus.text, { type: initialStatus.type });
+    // Starte Rotator
+    setInterval(() => {
+      statusIndex = (statusIndex + 1) % statusMessages.length;
+      const status = statusMessages[statusIndex];
+      client.user.setActivity(status.text, { type: status.type });
+    }, 30000);
   },
 };
