@@ -19,6 +19,8 @@ module.exports = {
     // Initialisiere den Scheduler
     new Scheduler(client);
 
+    let statusIndex = 0;
+
     // Setze initialen Status nach kurzer Verzögerung
     setTimeout(() => {
       const status = statusMessages[statusIndex];
