@@ -1,4 +1,5 @@
 const Scheduler = require("../services/scheduler");
+const { ActivityType } = require("discord.js");
 
 // Status-Nachrichten für den Rotator
 const statusMessages = [
