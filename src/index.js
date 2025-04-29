@@ -57,13 +57,26 @@ client.once("ready", async () => {
   console.log("Bot ist bereit!");
 
   // Deploy Commands
+  const rest = new REST({ version: "10" }).setToken(token);
+
+  // Umschaltbar zwischen Guild- oder Global-Deploy
+  const useGlobal = process.env.USE_GLOBAL_COMMANDS;
+
+  const route = useGlobal ? Routes.applicationCommands(clientId) : Routes.applicationGuildCommands(clientId, guildId);
+
+  // Guild Commands löschen, um doppelte Slash Commands zu vermeiden
   try {
-    const rest = new REST().setToken(token);
-    console.log(`Starte das Aktualisieren von ${commands.length} Application (/) Commands.`);
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-    console.log(`Erfolgreich ${commands.length} Application (/) Commands geladen.`);
+    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+    console.log("🧹 Alte Guild-Commands erfolgreich entfernt.");
+  } catch (err) {
+    console.error("❌ Fehler beim Entfernen der Guild-Commands:", err);
+  }
+
+  try {
+    await rest.put(route, { body: commands });
+    console.log(`✅ ${commands.length} Slash-Commands ${useGlobal ? "global" : "für die Guild"} deployed.`);
   } catch (error) {
-    console.error("Fehler beim Deploy der Commands:", error);
+    console.error("❌ Fehler beim Deploy der Commands:", error);
   }
 });
 
