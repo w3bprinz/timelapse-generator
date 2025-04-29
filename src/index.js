@@ -5,7 +5,21 @@ const path = require("path");
 const { token, clientId, guildId } = require("./config");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMembers,
+  ],
+  presence: {
+    status: "online",
+    activities: [
+      {
+        name: "🌱 Pflanzenwachstum überwachen",
+        type: "WATCHING",
+      },
+    ],
+  },
 });
 
 // Command Handler
