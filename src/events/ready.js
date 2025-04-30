@@ -15,23 +15,34 @@ module.exports = {
   once: true,
   async execute(client) {
     console.log(`Bot ist online! Eingeloggt als ${client.user.tag}`);
-
-    // Initialisiere den Scheduler
     new Scheduler(client);
+
+    const guild = client.guilds.cache.get(process.env.GUILD_ID); // 🔁 Stelle sicher, dass GUILD_ID in .env ist
+    if (!guild) {
+      console.error("Guild nicht gefunden. Bitte GUILD_ID prüfen.");
+      return;
+    }
 
     let statusIndex = 0;
 
-    // Setze initialen Status nach kurzer Verzögerung
-    setTimeout(() => {
-      const status = statusMessages[statusIndex];
-      client.user.setActivity(status.text, { type: status.type });
-    }, 1000);
+    const updateStatus = async () => {
+      try {
+        await guild.members.fetch(); // Nur bei Bedarf (optional, bei sehr großen Servern nötig)
+        const memberCount = guild.memberCount;
+        const statusTemplate = statusMessages[statusIndex];
+        let statusText = statusTemplate.text.replace("{GROWER_COUNT}", memberCount);
 
-    // Starte Rotator
-    setInterval(() => {
-      statusIndex = (statusIndex + 1) % statusMessages.length;
-      const status = statusMessages[statusIndex];
-      client.user.setActivity(status.text, { type: status.type });
-    }, 30000);
+        client.user.setActivity(statusText, { type: statusTemplate.type });
+        statusIndex = (statusIndex + 1) % statusMessages.length;
+      } catch (error) {
+        console.error("Fehler beim Aktualisieren des Status:", error);
+      }
+    };
+
+    // Starte sofort nach 1 Sekunde
+    setTimeout(updateStatus, 1000);
+
+    // Wiederhole alle 30 Sekunden
+    setInterval(updateStatus, 30000);
   },
 };
