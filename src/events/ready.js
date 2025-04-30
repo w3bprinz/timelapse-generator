@@ -3,6 +3,7 @@ const { ActivityType } = require("discord.js");
 
 // Status-Nachrichten für den Rotator
 const statusMessages = [
+  { type: ActivityType.Watching, text: "👀 Schaut {GROWER_COUNT} Growern zu" },
   { type: ActivityType.Watching, text: "🌱 Pflanzenwachstum überwachen" },
   { type: ActivityType.Playing, text: "📸 Screenshots aufnehmen" },
   { type: ActivityType.Playing, text: "⏱️ Timelapse erstellen" },
