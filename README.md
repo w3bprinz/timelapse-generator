@@ -8,6 +8,8 @@ Ein Discord Bot, der automatisch Screenshots erstellt und daraus Timelapse-Video
 - Tägliche Screenshot-Posts um 8 und 20 Uhr
 - Automatische Timelapse-Erstellung um Mitternacht
 - Discord-Integration für Screenshot-Posts
+- Dynamischer Bot-Status mit Mitgliederanzahl
+- Optionaler Streaming-Status für Twitch-Integration
 
 ## Installation
 
@@ -21,6 +23,7 @@ CLIENT_ID=your_client_id_here
 GUILD_ID=your_guild_id_here
 SCREENSHOT_CHANNEL_ID=your_channel_id_here
 RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
+STREAM_URL=https://www.twitch.tv/your_channel (optional)
 ```
 
 ## Docker Installation
@@ -48,6 +51,7 @@ RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
 - GUILD_ID
 - SCREENSHOT_CHANNEL_ID
 - RTSP_URL
+- STREAM_URL (optional)
 
 ## Verwendung
 
@@ -56,6 +60,18 @@ RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
 - `/status` - Zeige den aktuellen Status des Bots
 - `/lastimage` - Zeige das letzte erstellte Bild
 - `/purge [anzahl]` - Lösche Nachrichten (nur für Bot-Owner)
+
+### Bot-Status
+
+Der Bot zeigt verschiedene Status-Nachrichten an:
+
+- Aktuelle Mitgliederanzahl des Servers
+- Pflanzenwachstum-Überwachung
+- Screenshot-Aufnahme
+- Timelapse-Erstellung
+- Daily Weed Pictures
+- Wachstumsstatistiken
+- Optional: Streaming-Status (wenn STREAM_URL konfiguriert ist)
 
 ### Dateistruktur
 
@@ -97,4 +113,5 @@ CLIENT_ID=ihre_client_id
 GUILD_ID=ihre_guild_id
 SCREENSHOT_CHANNEL_ID=ihre_channel_id
 RTSP_URL=rtsp://benutzername:passwort@ihre_kamera_ip
+STREAM_URL=https://www.twitch.tv/your_channel (optional)
 ```
