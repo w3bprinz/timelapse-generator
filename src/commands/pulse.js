@@ -40,10 +40,10 @@ module.exports = {
         .setTitle("🌿 Pulse Grow Sensordaten")
         .setColor(0x00ff99)
         .addFields(
-          { name: "🌡️ Temperatur", value: `${data.temperatureC} °C`, inline: true },
-          { name: "💧 Luftfeuchtigkeit", value: `${data.humidityRh} %`, inline: true },
-          { name: "🌫️ CO₂", value: `${data.co2} ppm`, inline: true },
-          { name: "📈 VPD", value: `${data.vpd}`, inline: true }
+          { name: "🌡️ Temperatur", value: `${data.temperatureC.toFixed(2) ?? "n/A"} °C`, inline: true },
+          { name: "💧 Luftfeuchtigkeit", value: `${data.humidityRh.toFixed(2) ?? "n/A"} %`, inline: true },
+          { name: "🌫️ CO₂", value: `${data.co2.toFixed(2) ?? "n/A"} ppm`, inline: true },
+          { name: "📈 VPD", value: `${data.vpd.toFixed(2) ?? "n/A"}`, inline: true }
         )
         .setTimestamp(new Date(data.createdAt))
         .setFooter({ text: "Pulse Grow Pro" });
