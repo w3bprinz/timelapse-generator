@@ -45,7 +45,7 @@ module.exports = {
           { name: "🌫️ CO₂", value: `${data.co2.toFixed(2) ?? "n/A"} ppm`, inline: true },
           { name: "📈 VPD", value: `${data.vpd.toFixed(2) ?? "n/A"}`, inline: true }
         )
-        .setTimestamp(new Date(new Date(data.createdAt).toLocaleString("en-US", { timeZone: "Europe/Berlin" })))
+        .setTimestamp(new Date(data.createdAt + "Z"))
         .setFooter({ text: "Pulse Grow Pro" });
 
       await interaction.reply({ embeds: [embed] });
