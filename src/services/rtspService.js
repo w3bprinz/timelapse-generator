@@ -50,9 +50,9 @@ class RTSPStreamService {
       // Erstelle Screenshot mit FFmpeg mit maximaler Qualität
       const ffmpegCommand = [
         "ffmpeg -y",
-        "-rtsp_transport tcp",
-        "-analyzeduration 50000000",
-        "-probesize 10000000",
+        "-rtsp_transport tcp", // TCP für stabilere Verbindung (bei instabilem WLAN)
+        "-analyzeduration 50000000", // Längere Zeit für Stream-Analyse 50 Sekunden
+        "-probesize 10000000", // Größere Puffergröße 10 MB
         `-i "${process.env.RTSP_URL}"`,
         "-frames:v 1",
         "-c:v png", // Direkte PNG-Ausgabe
