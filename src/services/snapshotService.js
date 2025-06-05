@@ -59,7 +59,10 @@ class SnapshotService {
         return null;
       }
 
-      return pngPath;
+      return {
+        filename: path.basename(pngPath),
+        filepath: pngPath,
+      };
     } catch (error) {
       console.error("❌ Fehler beim Abrufen des Snapshots:", error);
       return null;
