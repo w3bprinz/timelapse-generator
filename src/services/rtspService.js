@@ -1,10 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
-//const { exec } = require("child_process");
-const util = require("util");
-const execPromise = util.promisify(exec);
-const { spawn } = require("child_process"); // NEU: spawn statt exec
+const { spawn } = require("child_process");
 
 class RTSPStreamService {
   constructor() {
@@ -46,12 +43,13 @@ class RTSPStreamService {
     const filename = `screenshot_${timestamp}.png`;
     const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
     const finalPath = path.join(this.screenshotsPath, filename);
-    // prettier-ignore
+
     return new Promise((resolve, reject) => {
+      // prettier-ignore
       const ffmpegArgs = [
         "-rtsp_transport", "tcp",
-        "-timeout", "10000000",    // max. 10 Sekunden auf Verbindungsantwort warten
-        "-stimeout", "10000000",   // max. 10 Sekunden auf Verbindung selbst
+        "-timeout", "10000000",
+        "-stimeout", "10000000",
         "-ss", "00:00:01",
         "-i", process.env.RTSP_URL,
         "-frames:v", "1",
@@ -61,19 +59,18 @@ class RTSPStreamService {
         "-y",
         tempPath,
       ];
-      
-  
+
       const ffmpeg = spawn("ffmpeg", ffmpegArgs);
-  
+
       ffmpeg.stderr.on("data", (data) => {
         console.log(`[ffmpeg stderr] ${data}`);
       });
-  
+
       ffmpeg.on("error", (err) => {
         console.error("FFmpeg Prozessfehler:", err);
         reject(err);
       });
-  
+
       ffmpeg.on("close", (code) => {
         if (code === 0 && fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
           fs.renameSync(tempPath, finalPath);
@@ -96,7 +93,6 @@ class RTSPStreamService {
     const discordPath = path.join(this.screenshotsPath, `discord_temp_${timestamp}.png`);
 
     try {
-      // Optimiere das Bild für Discord
       await sharp(imagePath)
         .resize(1920, 1080, {
           fit: "inside",
@@ -108,11 +104,8 @@ class RTSPStreamService {
         })
         .toFile(discordPath);
 
-      // Überprüfe die Dateigröße
       const stats = fs.statSync(discordPath);
       if (stats.size > 10 * 1024 * 1024) {
-        // Größer als 10MB
-        // Reduziere die Qualität schrittweise
         let quality = 100;
         while (stats.size > 10 * 1024 * 1024 && quality > 50) {
           quality -= 10;
@@ -137,61 +130,74 @@ class RTSPStreamService {
   }
 
   async createTimelapse(dayString) {
-    try {
-      const screenshotsDir = this.screenshotsPath;
-      const outputPath = path.join(this.timelapsePath, `timelapse_${dayString}.mp4`);
+    const screenshotsDir = this.screenshotsPath;
+    const outputPath = path.join(this.timelapsePath, `timelapse_${dayString}.mp4`);
 
-      // Zähle die Screenshots für das Logging
+    return new Promise((resolve, reject) => {
       const screenshots = fs
         .readdirSync(screenshotsDir)
         .filter((file) => file.endsWith(".png") && file.startsWith("screenshot_"));
 
       console.log(`Gefundene Screenshots: ${screenshots.length}`);
       if (screenshots.length === 0) {
-        throw new Error("Keine Screenshots im Verzeichnis gefunden");
+        return reject(new Error("Keine Screenshots im Verzeichnis gefunden"));
       }
 
-      // Erstelle Timelapse mit FFmpeg
-      const ffmpegCommand = [
-        "ffmpeg -y",
-        "-framerate 12",
-        "-pattern_type glob",
-        `-i "${screenshotsDir}/screenshot_*.png"`,
-        "-c:v libx264",
-        "-preset slow",
-        "-crf 18",
-        "-pix_fmt yuv420p",
-        "-movflags +faststart",
-        `"${outputPath}"`,
-      ].join(" ");
+      const ffmpegArgs = [
+        "-y",
+        "-framerate",
+        "12",
+        "-pattern_type",
+        "glob",
+        "-i",
+        `${screenshotsDir}/screenshot_*.png`,
+        "-c:v",
+        "libx264",
+        "-preset",
+        "slow",
+        "-crf",
+        "18",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        outputPath,
+      ];
 
-      await execPromise(ffmpegCommand);
+      const ffmpeg = spawn("ffmpeg", ffmpegArgs);
 
-      // Überprüfe die Ausgabedatei
-      if (fs.existsSync(outputPath)) {
-        const stats = fs.statSync(outputPath);
-        console.log(`Timelapse erfolgreich erstellt: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
-      } else {
-        throw new Error("Timelapse wurde nicht erstellt");
-      }
+      ffmpeg.stderr.on("data", (data) => {
+        console.log(`[ffmpeg stderr] ${data}`);
+      });
 
-      // Lösche alle Screenshots
-      let deletedCount = 0;
-      for (const screenshot of screenshots) {
-        try {
-          fs.unlinkSync(path.join(screenshotsDir, screenshot));
-          deletedCount++;
-        } catch (error) {
-          console.error(`Fehler beim Löschen des Screenshots ${screenshot}:`, error);
+      ffmpeg.on("error", (err) => {
+        console.error("FFmpeg Prozessfehler:", err);
+        reject(err);
+      });
+
+      ffmpeg.on("close", (code) => {
+        if (code === 0 && fs.existsSync(outputPath)) {
+          const stats = fs.statSync(outputPath);
+          console.log(`Timelapse erfolgreich erstellt: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
+          let deletedCount = 0;
+          for (const screenshot of screenshots) {
+            try {
+              fs.unlinkSync(path.join(screenshotsDir, screenshot));
+              deletedCount++;
+            } catch (error) {
+              console.error(`Fehler beim Löschen von ${screenshot}:`, error);
+            }
+          }
+          console.log(`Gelöschte Screenshots: ${deletedCount} von ${screenshots.length}`);
+          resolve(outputPath);
+        } else {
+          console.error(`Timelapse fehlgeschlagen (Exit Code ${code})`);
+          if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+          reject(new Error("Timelapse konnte nicht erstellt werden"));
         }
-      }
-      console.log(`Gelöschte Screenshots: ${deletedCount} von ${screenshots.length}`);
-
-      return outputPath;
-    } catch (error) {
-      console.error("Fehler beim Erstellen der Timelapse:", error);
-      throw error;
-    }
+      });
+    });
   }
 }
 
