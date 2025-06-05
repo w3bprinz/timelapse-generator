@@ -163,4 +163,4 @@ class SnapshotService {
   }
 }
 
-module.exports = SnapshotService;
+module.exports = SnapshotService();

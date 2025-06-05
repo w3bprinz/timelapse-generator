@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 //const rtspService = require("./rtspService");
-const rtspService = require("./snapshotService");
+const SnapshotService = require("./snapshotService");
+const rtspService = new SnapshotService();
 const { Client } = require("discord.js");
 const fs = require("fs");
 const fsPromises = require("fs").promises;
