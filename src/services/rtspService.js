@@ -56,7 +56,7 @@ class RTSPStreamService {
       "-i",
       process.env.RTSP_URL,
       "-t",
-      "5", // 5 Sekunden lesen
+      "7", // 5 Sekunden lesen
       "-vf",
       "select='eq(pict_type\\,I)'",
       "-fps_mode",
