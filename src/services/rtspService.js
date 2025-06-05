@@ -44,7 +44,7 @@ class RTSPStreamService {
     const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
     const finalPath = path.join(this.screenshotsPath, filename);
 
-    const ssOffset = 5 + retries; // z. B. 5s, 6s, 7s bei Retry 0/1/2
+    const ssOffset = 10 + retries; // z. B. 5s, 6s, 7s bei Retry 0/1/2
 
     return new Promise((resolve, reject) => {
       const ffmpegArgs = [
