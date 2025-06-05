@@ -55,7 +55,7 @@ class RTSPStreamService {
         "-probesize",
         "10000000",
         "-ss",
-        `00:00:0${ssOffset}`,
+        `00:00:${ssOffset}`,
         "-i",
         process.env.RTSP_URL,
         "-t",
@@ -63,7 +63,7 @@ class RTSPStreamService {
         "-vf",
         "select=eq(n\\,50)", // Frame 50 extrahieren
         "-vsync",
-        "0",
+        "passthrough",
         "-frames:v",
         "1",
         "-c:v",
