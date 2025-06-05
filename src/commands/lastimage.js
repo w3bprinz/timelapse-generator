@@ -53,10 +53,13 @@ module.exports = {
         })
         .toFile(resizedPath);
 
+      const buffer = fs.readFileSync(resizedPath); // Lade als Buffer
+
       // Antwort mit Bild schicken
       await interaction.editReply({
-        content: "Hier ist das letzte aufgenommene Bild:",
-        files: [resizedPath],
+        //content: "Hier ist das letzte aufgenommene Bild:",
+        content: `🖼️ Letzter Screenshot: \`${latestFile.name}\``,
+        files: [{ attachment: buffer, name: latestFile.name }], // Buffer statt Pfad
       });
 
       // Aufräumen
