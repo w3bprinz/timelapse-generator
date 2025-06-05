@@ -53,7 +53,7 @@ class SnapshotService {
       fs.unlinkSync(jpgPath);
 
       const stats = fs.statSync(pngPath);
-      if (stats.size < 150 * 1024) {
+      if (stats.size < 3 * 1024 * 1024) {
         console.warn(`⚠️ Screenshot ungültig (Size: ${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
         fs.unlinkSync(pngPath);
         return null;
