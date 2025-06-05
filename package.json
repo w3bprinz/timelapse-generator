@@ -4,7 +4,7 @@
   "description": "Discord Bot für RTSP Stream Screenshots und Timelapse-Generierung",
   "main": "src/index.js",
   "scripts": {
-    "start": "node --no-warnings src/index.js",
+    "start": "NODE_OPTIONS='--no-warnings' node src/index.js",
     "deploy": "node src/deploy-commands.js"
   },
   "dependencies": {
