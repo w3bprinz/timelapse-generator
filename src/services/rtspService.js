@@ -144,24 +144,16 @@ class RTSPStreamService {
         return reject(new Error("Keine Screenshots im Verzeichnis gefunden"));
       }
 
+      // prettier-ignore
       const ffmpegArgs = [
-        "-y",
-        "-framerate",
-        "12",
-        "-pattern_type",
-        "glob",
-        "-i",
-        `${screenshotsDir}/screenshot_*.png`,
-        "-c:v",
-        "libx264",
-        "-preset",
-        "slow",
-        "-crf",
-        "18",
-        "-pix_fmt",
-        "yuv420p",
-        "-movflags",
-        "+faststart",
+        '-y', '-framerate', '12',
+        '-pattern_type', 'glob',
+        '-i', `${screenshotsDir}/screenshot_*.png`,
+        '-c:v', 'libx264',
+        '-preset', 'slow',
+        '-crf', '18',
+        '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart',
         outputPath,
       ];
 
