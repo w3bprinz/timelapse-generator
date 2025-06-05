@@ -50,16 +50,20 @@ class RTSPStreamService {
       const ffmpegArgs = [
         "-rtsp_transport",
         "tcp",
-        "-timeout",
-        "10000000",
         "-analyzeduration",
         "10000000",
         "-probesize",
-        "5000000",
+        "10000000",
         "-ss",
         `00:00:0${ssOffset}`,
         "-i",
         process.env.RTSP_URL,
+        "-t",
+        "2", // 2 Sekunden puffern (50 Frames bei 25 fps)
+        "-vf",
+        "select=eq(n\\,50)", // Frame 50 extrahieren
+        "-vsync",
+        "0",
         "-frames:v",
         "1",
         "-c:v",
