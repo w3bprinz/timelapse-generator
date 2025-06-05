@@ -51,7 +51,7 @@ class RTSPStreamService {
         "-timeout", "10000000",
         "-analyzeduration", "10000000",
         "-probesize", "5000000",
-        "-ss", "00:00:01",
+        "-ss", "00:00:05",
         "-i", process.env.RTSP_URL,
         "-frames:v", "1",
         "-c:v", "png",
