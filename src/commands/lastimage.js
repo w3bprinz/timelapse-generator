@@ -53,7 +53,7 @@ module.exports = {
         })
         .toFile(resizedPath);
 
-      const buffer = await fs.readFileSync(resizedPath); // Lade als Buffer
+      const buffer = await fs.readFile(resizedPath); // Lade als Buffer
 
       // Antwort mit Bild schicken
       await interaction.editReply({
