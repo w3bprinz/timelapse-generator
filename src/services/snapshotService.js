@@ -53,11 +53,14 @@ class SnapshotService {
       fs.unlinkSync(jpgPath);
 
       const stats = fs.statSync(pngPath);
+      const fileSizeMB = (stats.size / 1024 / 1024).toFixed(1);
       if (stats.size < 3 * 1024 * 1024) {
         console.warn(`⚠️ Screenshot ungültig (Size: ${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
         fs.unlinkSync(pngPath);
         return null;
       }
+
+      console.log(`✅ Screenshot erfolgreich: ${path.basename(pngPath)} (${fileSizeMB} MB)`);
 
       return {
         filename: path.basename(pngPath),
