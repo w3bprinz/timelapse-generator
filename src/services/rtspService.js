@@ -1,9 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
-const { exec } = require("child_process");
+//const { exec } = require("child_process");
 const util = require("util");
 const execPromise = util.promisify(exec);
+const { spawn } = require("child_process"); // NEU: spawn statt exec
 
 class RTSPStreamService {
   constructor() {
@@ -45,45 +46,49 @@ class RTSPStreamService {
     const filename = `screenshot_${timestamp}.png`;
     const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
     const finalPath = path.join(this.screenshotsPath, filename);
-
-    try {
-      // Erstelle Screenshot mit FFmpeg mit maximaler Qualität
-      const ffmpegCommand = [
-        "ffmpeg -y",
-        "-rtsp_transport tcp", // TCP für stabilere Verbindung (bei instabilem WLAN)
-        "-analyzeduration 50000000", // Längere Zeit für Stream-Analyse 50 Sekunden
-        "-probesize 10000000", // Größere Puffergröße 10 MB
-        `-i "${process.env.RTSP_URL}"`,
-        "-frames:v 1",
-        "-c:v png", // Direkte PNG-Ausgabe
-        "-q:v 1", // Höchste Qualität für PNG
-        "-f image2", // Bildformat
-        "-pix_fmt rgb24", // RGB-Farbraum
-        "-threads 1",
-        `"${tempPath}"`,
-      ].join(" ");
-
-      await execPromise(ffmpegCommand);
-
-      // Überprüfe, ob das Bild gültig ist
-      if (fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
-        // Verschiebe die temporäre Datei an den endgültigen Ort
-        fs.renameSync(tempPath, finalPath);
-        console.log(`Screenshot erfolgreich erstellt: ${finalPath}`);
-
-        return {
-          filename,
-          filepath: finalPath,
-        };
-      }
-    } catch (error) {
-      console.error("Fehler beim Erstellen des Screenshots:", error);
-    } finally {
-      // Lösche die temporäre Datei, falls vorhanden
-      if (fs.existsSync(tempPath)) {
-        fs.unlinkSync(tempPath);
-      }
-    }
+    // prettier-ignore
+    return new Promise((resolve, reject) => {
+      const ffmpegArgs = [
+        "-rtsp_transport", "tcp",
+        "-timeout", "10000000",    // max. 10 Sekunden auf Verbindungsantwort warten
+        "-stimeout", "10000000",   // max. 10 Sekunden auf Verbindung selbst
+        "-ss", "00:00:01",
+        "-i", process.env.RTSP_URL,
+        "-frames:v", "1",
+        "-c:v", "png",
+        "-pix_fmt", "rgb24",
+        "-threads", "1",
+        "-y",
+        tempPath,
+      ];
+      
+  
+      const ffmpeg = spawn("ffmpeg", ffmpegArgs);
+  
+      ffmpeg.stderr.on("data", (data) => {
+        console.log(`[ffmpeg stderr] ${data}`);
+      });
+  
+      ffmpeg.on("error", (err) => {
+        console.error("FFmpeg Prozessfehler:", err);
+        reject(err);
+      });
+  
+      ffmpeg.on("close", (code) => {
+        if (code === 0 && fs.existsSync(tempPath) && fs.statSync(tempPath).size > 0) {
+          fs.renameSync(tempPath, finalPath);
+          console.log(`Screenshot erfolgreich erstellt: ${finalPath}`);
+          resolve({
+            filename,
+            filepath: finalPath,
+          });
+        } else {
+          console.error(`Screenshot fehlgeschlagen (Exit Code ${code})`);
+          if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+          reject(new Error("Screenshot konnte nicht erstellt werden"));
+        }
+      });
+    });
   }
 
   async optimizeForDiscord(imagePath) {
