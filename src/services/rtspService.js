@@ -54,16 +54,16 @@ class RTSPStreamService {
         "10000000",
         "-probesize",
         "10000000",
-        "-ss",
-        `00:00:${ssOffset}`,
         "-i",
         process.env.RTSP_URL,
+        "-ss",
+        `00:00:${ssOffset}`,
         "-t",
-        "2", // 2 Sekunden puffern (50 Frames bei 25 fps)
+        "5", // 5 Sekunden puffern (50 Frames bei 25 fps)
         "-vf",
-        "select=eq(n\\,50)", // Frame 50 extrahieren
-        "-vsync",
-        "passthrough",
+        "select=eq(n\\,100)", // Frame 50 extrahieren
+        "-fps_mode",
+        "vfr", // statt -vsync 0
         "-frames:v",
         "1",
         "-c:v",
