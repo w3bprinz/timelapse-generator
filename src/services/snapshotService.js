@@ -31,7 +31,8 @@ class SnapshotService {
 
   async takeScreenshot() {
     const timestamp = this.getBerlinTimestamp();
-    const screenshotPath = path.join(this.screenshotsPath, `screenshot_${timestamp}.png`);
+    const jpgPath = path.join(this.screenshotsPath, `screenshot_${timestamp}.jpg`);
+    const pngPath = path.join(this.screenshotsPath, `screenshot_${timestamp}.png`);
     const snapshotUrl = `http://${process.env.REOLINK_HOST}/cgi-bin/api.cgi?cmd=Snap&channel=0&rs=${Date.now()}&user=${
       process.env.REOLINK_USER
     }&password=${process.env.REOLINK_PASS}`;
@@ -40,21 +41,25 @@ class SnapshotService {
       const res = await fetch(snapshotUrl);
       if (!res.ok || !res.body) throw new Error(`HTTP Error: ${res.status}`);
 
-      const fileStream = fs.createWriteStream(screenshotPath);
+      const fileStream = fs.createWriteStream(jpgPath);
       await new Promise((resolve, reject) => {
         res.body.pipe(fileStream);
         res.body.on("error", reject);
         fileStream.on("finish", resolve);
       });
 
-      const stats = fs.statSync(screenshotPath);
-      if (stats.size < 2.5 * 1024 * 1024) {
+      // Convert to PNG and remove original JPG
+      await sharp(jpgPath).png().toFile(pngPath);
+      fs.unlinkSync(jpgPath);
+
+      const stats = fs.statSync(pngPath);
+      if (stats.size < 150 * 1024) {
         console.warn(`⚠️ Screenshot ungültig (Size: ${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
-        fs.unlinkSync(screenshotPath);
+        fs.unlinkSync(pngPath);
         return null;
       }
 
-      return screenshotPath;
+      return pngPath;
     } catch (error) {
       console.error("❌ Fehler beim Abrufen des Snapshots:", error);
       return null;
