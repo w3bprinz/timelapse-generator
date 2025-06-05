@@ -49,6 +49,8 @@ class RTSPStreamService {
       "tcp",
       "-timeout",
       "10000000",
+      "-fflags",
+      "+discardcorrupt",
       "-analyzeduration",
       "50000000",
       "-probesize",
@@ -56,7 +58,7 @@ class RTSPStreamService {
       "-i",
       process.env.RTSP_URL,
       "-t",
-      "10", // 5 Sekunden lesen
+      "10",
       "-vf",
       "select='eq(pict_type\\,I)'",
       "-fps_mode",
