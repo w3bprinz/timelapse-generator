@@ -38,32 +38,28 @@ class RTSPStreamService {
       .replace(/,/g, "");
   }
 
-  async takeScreenshot(retries = 0) {
+  async takeScreenshot() {
     const timestamp = this.getBerlinTimestamp();
     const filename = `screenshot_${timestamp}.png`;
     const tempPath = path.join(this.screenshotsPath, `temp_${filename}`);
     const finalPath = path.join(this.screenshotsPath, filename);
-
-    const ssOffset = 10 + retries; // z. B. 5s, 6s, 7s bei Retry 0/1/2
 
     return new Promise((resolve, reject) => {
       const ffmpegArgs = [
         "-rtsp_transport",
         "tcp",
         "-analyzeduration",
-        "10000000",
+        "20000000", // 20 Sek. Analysezeit
         "-probesize",
-        "10000000",
+        "20000000", // 20 MB Puffer
         "-i",
         process.env.RTSP_URL,
-        "-ss",
-        `00:00:${ssOffset}`,
         "-t",
-        "5", // 5 Sekunden puffern (50 Frames bei 25 fps)
+        "5", // 5 Sekunden aufnehmen
         "-vf",
-        "select=eq(n\\,100)", // Frame 50 extrahieren
+        "select='eq(pict_type\\,I)'", // Nur Keyframes durchlassen
         "-fps_mode",
-        "vfr", // statt -vsync 0
+        "vfr", // Empfohlen statt -vsync
         "-frames:v",
         "1",
         "-c:v",
@@ -88,25 +84,18 @@ class RTSPStreamService {
       });
 
       ffmpeg.on("close", (code) => {
-        const exists = fs.existsSync(tempPath);
-        const size = exists ? fs.statSync(tempPath).size : 0;
-
-        const valid = code === 0 && exists && size > 3 * 1024 * 1024 && size < 25 * 1024 * 1024;
-
-        if (valid) {
-          fs.renameSync(tempPath, finalPath);
-          console.log(`✅ Screenshot erfolgreich erstellt: ${finalPath} (${(size / 1024 / 1024).toFixed(1)} MB)`);
-          resolve({ filename, filepath: finalPath });
-        } else {
-          if (exists) fs.unlinkSync(tempPath);
-          console.warn(`⚠️ Screenshot ungültig (Size: ${(size / 1024).toFixed(1)} KB, Retry: ${retries})`);
-          if (retries < 2) {
-            return this.takeScreenshot(retries + 1)
-              .then(resolve)
-              .catch(reject);
+        try {
+          if (code === 0 && fs.existsSync(tempPath) && fs.statSync(tempPath).size > 500000) {
+            fs.renameSync(tempPath, finalPath);
+            console.log(`✅ Screenshot erfolgreich erstellt: ${finalPath}`);
+            resolve({ filename, filepath: finalPath });
           } else {
-            reject(new Error("❌ Screenshot konnte nach 3 Versuchen nicht erstellt werden"));
+            if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+            console.warn(`⚠️ Screenshot ungültig oder zu klein (Exit Code ${code})`);
+            reject(new Error("Screenshot konnte nicht erstellt werden"));
           }
+        } catch (error) {
+          reject(error);
         }
       });
     });
