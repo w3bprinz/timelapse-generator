@@ -38,7 +38,7 @@ module.exports = {
 
     const updateStatus = async () => {
       try {
-        await guild.members.fetch(); // Nur bei Bedarf (optional, bei sehr großen Servern nötig)
+        //await guild.members.fetch(); // Nur bei Bedarf (optional, bei sehr großen Servern nötig)
         const memberCount = guild.memberCount;
         const statusTemplate = statusMessages[statusIndex];
         let statusText = statusTemplate.text.replace("{GROWER_COUNT}", memberCount);
