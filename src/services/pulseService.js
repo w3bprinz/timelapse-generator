@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
 const { DateTime } = require("luxon");
-const Chart = require("chart.js");
+const { Chart } = require("chart.js");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
 
