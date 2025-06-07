@@ -1,26 +1,24 @@
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
-import { Chart, registerables, _adapters } from "chart.js";
+import { Chart, registerables } from "chart.js";
 import "chartjs-adapter-luxon";
 import { DateTime } from "luxon";
+import fetch from "node-fetch";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const DATA_PATH = path.resolve(__dirname, "../../data/pulse_data.json");
 const ARCHIVE_DIR = path.resolve(__dirname, "../../data/archives");
 
 Chart.register(...registerables);
-_adapters._date.override(DateTime);
 
-const width = 800;
-const height = 400;
-const backgroundColour = "#2c2f33";
 const chartJSNodeCanvas = new ChartJSNodeCanvas({
-  width,
-  height,
-  backgroundColour,
+  width: 800,
+  height: 400,
+  backgroundColour: "#2c2f33",
   chartCallback: (ChartLib) => {
     ChartLib.register(...registerables);
   },
@@ -28,16 +26,29 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
 
 class PulseService {
   async collectPulseData() {
-    const data = await this.readData();
-    const newEntry = {
-      timestamp: new Date().toISOString(),
-      temperature: this.randomValue(20, 30),
-      humidity: this.randomValue(40, 60),
-      co2: Math.floor(this.randomValue(400, 800)),
-      vpd: this.randomValue(0.8, 1.2),
-    };
-    data.push(newEntry);
-    await fs.outputJson(DATA_PATH, data, { spaces: 2 });
+    try {
+      const url = `https://api.pulsegrow.com/devices/${process.env.PULSE_DEVICE_ID}/recent-data`;
+      const response = await fetch(url, {
+        headers: { "x-api-key": process.env.PULSE_API_KEY },
+      });
+
+      if (!response.ok) throw new Error(`Pulse API Fehler: ${response.status}`);
+
+      const data = await response.json();
+      const entry = {
+        timestamp: new Date().toISOString(),
+        temperature: data.temperatureC,
+        humidity: data.humidityRh,
+        co2: data.co2,
+        vpd: data.vpd,
+      };
+
+      const allData = await this.readData();
+      allData.push(entry);
+      await fs.outputJson(DATA_PATH, allData, { spaces: 2 });
+    } catch (error) {
+      console.error("❌ Fehler beim Abrufen der Pulse Grow-Daten:", error);
+    }
   }
 
   async readData() {
@@ -62,7 +73,7 @@ class PulseService {
 
     if (toArchive.length === 0) return;
 
-    const archiveName = path.join(ARCHIVE_DIR, `pulse_data_${formatISO(new Date(), { representation: "date" })}.json`);
+    const archiveName = path.join(ARCHIVE_DIR, `pulse_data_${DateTime.now().toISODate()}.json`);
     await fs.outputJson(archiveName, toArchive, { spaces: 2 });
     await fs.outputJson(DATA_PATH, remaining, { spaces: 2 });
   }
@@ -121,7 +132,7 @@ class PulseService {
       },
     ];
 
-    const configuration = {
+    const config = {
       type: "line",
       data: { labels, datasets },
       options: {
@@ -132,77 +143,36 @@ class PulseService {
             time: {
               unit: "hour",
               tooltipFormat: "HH:mm",
-              displayFormats: {
-                hour: "HH:mm",
-              },
+              displayFormats: { hour: "HH:mm" },
             },
-            ticks: {
-              autoSkip: true,
-              maxTicksLimit: 20,
-              color: "#ffffff",
-            },
-            grid: {
-              color: "#444",
-            },
+            ticks: { color: "#ffffff", maxTicksLimit: 20 },
+            grid: { color: "#444" },
           },
           y: {
-            position: "left",
-            title: {
-              display: true,
-              text: "Temp / Humidity",
-              color: "#ffffff",
-            },
-            ticks: {
-              color: "#ffffff",
-            },
-            grid: {
-              color: "#444",
-            },
+            title: { display: true, text: "Temp / Humidity", color: "#ffffff" },
+            ticks: { color: "#ffffff" },
+            grid: { color: "#444" },
           },
           y1: {
             position: "right",
-            title: {
-              display: true,
-              text: "CO2 (ppm)",
-              color: "#ffffff",
-            },
-            ticks: {
-              color: "#ffffff",
-            },
-            grid: {
-              drawOnChartArea: false,
-            },
+            title: { display: true, text: "CO2 (ppm)", color: "#ffffff" },
+            ticks: { color: "#ffffff" },
+            grid: { drawOnChartArea: false },
           },
           y2: {
             position: "right",
-            title: {
-              display: true,
-              text: "VPD",
-              color: "#ffffff",
-            },
-            ticks: {
-              color: "#ffffff",
-            },
-            grid: {
-              drawOnChartArea: false,
-            },
+            title: { display: true, text: "VPD", color: "#ffffff" },
+            ticks: { color: "#ffffff" },
+            grid: { drawOnChartArea: false },
           },
         },
         plugins: {
-          legend: {
-            labels: {
-              color: "#ffffff",
-            },
-          },
+          legend: { labels: { color: "#ffffff" } },
         },
       },
     };
 
-    return chartJSNodeCanvas.renderToBuffer(configuration);
-  }
-
-  randomValue(min, max) {
-    return +(Math.random() * (max - min) + min).toFixed(2);
+    return chartJSNodeCanvas.renderToBuffer(config);
   }
 }
 
