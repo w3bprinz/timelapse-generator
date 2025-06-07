@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 import { DateTime } from "luxon";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { AttachmentBuilder } from "discord.js";
+import { Chart } from "chart.js";
 import "chartjs-adapter-luxon";
 
 class PulseService {
