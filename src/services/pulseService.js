@@ -204,4 +204,8 @@ class PulseService {
   }
 }
 
-export default new PulseService();
+export default {
+  collectPulseData,
+  archiveOldData,
+  sendChartToDiscord,
+};

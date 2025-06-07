@@ -1,5 +1,6 @@
 import cron from "node-cron";
-import snapshotService from "./snapshotService.js";
+import SnapshotService from "./snapshotService.js";
+const snapshotService = new SnapshotService();
 import pulseService from "./pulseService.js";
 import fs from "fs-extra";
 import path from "path";
