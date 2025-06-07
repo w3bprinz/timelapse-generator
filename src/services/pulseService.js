@@ -1,3 +1,5 @@
+require("chartjs-adapter-luxon");
+
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
@@ -55,8 +57,11 @@ class PulseService {
     const width = 800;
     const height = 400;
     const chart = new ChartJSNodeCanvas({ width, height });
+
     const data = this.filterDataByDays(days);
-    const labels = data.map((d) => new Date(d.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" }));
+
+    // Luxon-kompatible Labels: echte Date-Objekte!
+    const labels = data.map((d) => new Date(d.timestamp));
 
     const config = {
       type: "line",
@@ -91,10 +96,28 @@ class PulseService {
       },
       options: {
         scales: {
-          y: { beginAtZero: false },
-          x: { ticks: { maxTicksLimit: 12 } },
+          x: {
+            type: "time",
+            time: {
+              unit: days === 1 ? "hour" : "day",
+              displayFormats: {
+                hour: "dd.MM HH:mm",
+                day: "dd.MM",
+              },
+            },
+            ticks: {
+              maxTicksLimit: 12,
+            },
+          },
+          y: {
+            beginAtZero: false,
+          },
         },
-        plugins: { legend: { position: "bottom" } },
+        plugins: {
+          legend: {
+            position: "bottom",
+          },
+        },
       },
     };
 
