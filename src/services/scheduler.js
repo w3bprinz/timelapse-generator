@@ -1,8 +1,12 @@
 import cron from "node-cron";
 import snapshotService from "./snapshotService.js";
 import pulseService from "./pulseService.js";
-import fs from "fs";
-import fsPromises from "fs/promises";
+import fs from "fs-extra";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class Scheduler {
   constructor(client) {
@@ -50,7 +54,7 @@ class Scheduler {
       });
 
       if (fs.existsSync(optimizedPath)) {
-        await fsPromises.unlink(optimizedPath);
+        await fs.unlink(optimizedPath);
       }
     } catch (error) {
       console.error("Fehler beim Posten des Screenshots:", error);
@@ -58,6 +62,7 @@ class Scheduler {
   }
 
   setupSchedules() {
+    // Alle 5 Minuten Screenshot erstellen, ggf. um 08:00 und 20:00 posten
     cron.schedule(
       "*/5 * * * *",
       async () => {
@@ -79,6 +84,7 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
+    // Tägliche Timelapse
     cron.schedule(
       "0 0 * * *",
       async () => {
@@ -103,6 +109,7 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
+    // Stündliche Pulse-Daten sammeln
     cron.schedule(
       "0 * * * *",
       async () => {
@@ -116,6 +123,7 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
+    // Tägliches Archivieren
     cron.schedule(
       "0 0 * * *",
       async () => {
@@ -129,6 +137,7 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
+    // Charts
     cron.schedule(
       "0 9 * * *",
       async () => {

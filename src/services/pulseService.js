@@ -1,133 +1,207 @@
-import { Chart, registerables } from "chart.js";
-import "chartjs-adapter-luxon";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import { Chart, registerables, _adapters } from "chart.js";
+import "chartjs-adapter-luxon";
+import { DateTime } from "luxon";
 import fs from "fs-extra";
 import path from "path";
-import sharp from "sharp";
-import { DateTime } from "luxon";
+import { fileURLToPath } from "url";
+import { formatISO, parseISO, isValid } from "date-fns";
 
-const width = 1000;
-const height = 500;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_PATH = path.resolve(__dirname, "../../data/pulse_data.json");
+const ARCHIVE_DIR = path.resolve(__dirname, "../../data/archives");
+
+Chart.register(...registerables);
+_adapters._date.override(DateTime);
+
+const width = 800;
+const height = 400;
+const backgroundColour = "#2c2f33";
 const chartJSNodeCanvas = new ChartJSNodeCanvas({
   width,
   height,
+  backgroundColour,
   chartCallback: (ChartLib) => {
     ChartLib.register(...registerables);
   },
 });
 
-const PULSE_DATA_PATH = path.join(process.cwd(), "data", "pulse_data.json");
-const ARCHIVE_PATH = path.join(process.cwd(), "data", "archives", "pulse_archive.json");
+class PulseService {
+  async collectPulseData() {
+    const data = await this.readData();
+    const newEntry = {
+      timestamp: new Date().toISOString(),
+      temperature: this.randomValue(20, 30),
+      humidity: this.randomValue(40, 60),
+      co2: Math.floor(this.randomValue(400, 800)),
+      vpd: this.randomValue(0.8, 1.2),
+    };
+    data.push(newEntry);
+    await fs.outputJson(DATA_PATH, data, { spaces: 2 });
+  }
 
-async function loadData(days) {
-  const raw = await fs.readFile(PULSE_DATA_PATH, "utf-8");
-  const data = JSON.parse(raw);
-
-  const threshold = DateTime.now().minus({ days });
-  return data.filter((entry) => DateTime.fromISO(entry.timestamp) >= threshold);
-}
-
-function createChartConfig(data) {
-  return {
-    type: "line",
-    data: {
-      labels: data.map((d) => d.timestamp),
-      datasets: [
-        {
-          label: "Temperatur (°C)",
-          data: data.map((d) => d.temperature),
-          borderColor: "#ff6384",
-          fill: false,
-        },
-        {
-          label: "Luftfeuchtigkeit (%)",
-          data: data.map((d) => d.humidity),
-          borderColor: "#36a2eb",
-          fill: false,
-        },
-        {
-          label: "CO₂ (ppm)",
-          data: data.map((d) => d.co2),
-          borderColor: "#4bc0c0",
-          fill: false,
-        },
-        {
-          label: "VPD",
-          data: data.map((d) => d.vpd),
-          borderColor: "#9966ff",
-          fill: false,
-        },
-      ],
-    },
-    options: {
-      responsive: false,
-      plugins: {
-        legend: { position: "top" },
-        title: { display: true, text: "Pulse Klimadaten" },
-      },
-      scales: {
-        x: {
-          type: "time",
-          time: {
-            tooltipFormat: "dd.MM.yyyy HH:mm",
-            displayFormats: { hour: "HH:mm", day: "dd.MM." },
-          },
-          title: { display: true, text: "Zeit" },
-        },
-        y: {
-          title: { display: true, text: "Wert" },
-        },
-      },
-    },
-  };
-}
-
-async function archiveOldData(maxAgeDays = 30) {
-  const now = DateTime.now();
-  const data = await fs.readJSON(PULSE_DATA_PATH).catch(() => []);
-  const archive = await fs.readJSON(ARCHIVE_PATH).catch(() => []);
-
-  const fresh = [];
-  for (const entry of data) {
-    const time = DateTime.fromISO(entry.timestamp);
-    if (now.diff(time, "days").days > maxAgeDays) {
-      archive.push(entry);
-    } else {
-      fresh.push(entry);
+  async readData() {
+    try {
+      const exists = await fs.pathExists(DATA_PATH);
+      if (!exists) return [];
+      const content = await fs.readJson(DATA_PATH);
+      return Array.isArray(content) ? content : [];
+    } catch (err) {
+      console.error("Fehler beim Lesen der Pulse-Daten:", err);
+      return [];
     }
   }
 
-  await fs.writeJSON(PULSE_DATA_PATH, fresh, { spaces: 2 });
-  await fs.writeJSON(ARCHIVE_PATH, archive, { spaces: 2 });
-}
+  async archiveOldData() {
+    const data = await this.readData();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 2);
 
-export default {
-  async createChart(days) {
-    const data = await loadData(days);
-    const config = createChartConfig(data);
-    return await chartJSNodeCanvas.renderToBuffer(config);
-  },
+    const toArchive = data.filter((entry) => new Date(entry.timestamp) < cutoff);
+    const remaining = data.filter((entry) => new Date(entry.timestamp) >= cutoff);
+
+    if (toArchive.length === 0) return;
+
+    const archiveName = path.join(ARCHIVE_DIR, `pulse_data_${formatISO(new Date(), { representation: "date" })}.json`);
+    await fs.outputJson(archiveName, toArchive, { spaces: 2 });
+    await fs.outputJson(DATA_PATH, remaining, { spaces: 2 });
+  }
 
   async sendChartToDiscord(client, days) {
-    const chartBuffer = await this.createChart(days);
-    const channel = await client.channels.fetch(process.env.PULSE_CHANNEL_ID);
+    try {
+      const buffer = await this.createChart(days);
+      const channel = await client.channels.fetch(process.env.PULSE_CHANNEL_ID);
+      await channel.send({
+        content: `📊 Diagramm der letzten ${days} Tage`,
+        files: [{ attachment: buffer, name: `pulse_chart_${days}d.png` }],
+      });
+    } catch (err) {
+      console.error("❌ Fehler beim Senden des Charts:", err);
+    }
+  }
 
-    const filename = `pulse_chart_${DateTime.now().toFormat("yyyyMMdd_HHmm")}.png`;
-    const filepath = path.join("/app/screenshots", filename);
+  async createChart(days) {
+    const data = await this.readData();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const filtered = data.filter((entry) => isValid(parseISO(entry.timestamp)) && new Date(entry.timestamp) >= cutoff);
 
-    await fs.writeFile(filepath, chartBuffer);
-    const resizedPath = filepath.replace(".png", "_resized.png");
+    const labels = filtered.map((entry) => entry.timestamp);
+    const datasets = [
+      {
+        label: "Temperatur (°C)",
+        data: filtered.map((e) => e.temperature),
+        borderColor: "#ff6384",
+        backgroundColor: "#ff6384",
+        yAxisID: "y",
+      },
+      {
+        label: "Luftfeuchtigkeit (%)",
+        data: filtered.map((e) => e.humidity),
+        borderColor: "#36a2eb",
+        backgroundColor: "#36a2eb",
+        yAxisID: "y",
+      },
+      {
+        label: "CO2 (ppm)",
+        data: filtered.map((e) => e.co2),
+        borderColor: "#cc65fe",
+        backgroundColor: "#cc65fe",
+        yAxisID: "y1",
+      },
+      {
+        label: "VPD",
+        data: filtered.map((e) => e.vpd),
+        borderColor: "#ffce56",
+        backgroundColor: "#ffce56",
+        yAxisID: "y2",
+      },
+    ];
 
-    await sharp(chartBuffer).resize(1920, 1080, { fit: "inside", withoutEnlargement: true }).toFile(resizedPath);
+    const configuration = {
+      type: "line",
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            type: "time",
+            time: {
+              unit: "hour",
+              tooltipFormat: "HH:mm",
+              displayFormats: {
+                hour: "HH:mm",
+              },
+            },
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 20,
+              color: "#ffffff",
+            },
+            grid: {
+              color: "#444",
+            },
+          },
+          y: {
+            position: "left",
+            title: {
+              display: true,
+              text: "Temp / Humidity",
+              color: "#ffffff",
+            },
+            ticks: {
+              color: "#ffffff",
+            },
+            grid: {
+              color: "#444",
+            },
+          },
+          y1: {
+            position: "right",
+            title: {
+              display: true,
+              text: "CO2 (ppm)",
+              color: "#ffffff",
+            },
+            ticks: {
+              color: "#ffffff",
+            },
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+          y2: {
+            position: "right",
+            title: {
+              display: true,
+              text: "VPD",
+              color: "#ffffff",
+            },
+            ticks: {
+              color: "#ffffff",
+            },
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: "#ffffff",
+            },
+          },
+        },
+      },
+    };
 
-    await channel.send({ files: [resizedPath] });
-    await fs.unlink(resizedPath);
-  },
+    return chartJSNodeCanvas.renderToBuffer(configuration);
+  }
 
-  async storePulseData(entry) {
-    const data = await fs.readJSON(PULSE_DATA_PATH).catch(() => []);
-    data.push(entry);
-    await fs.writeJSON(PULSE_DATA_PATH, data, { spaces: 2 });
-    await archiveOldData();
-  },
-};
+  randomValue(min, max) {
+    return +(Math.random() * (max - min) + min).toFixed(2);
+  }
+}
+
+export default new PulseService();
