@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import rtspService from "./rtspService.js";
+import snapshotService from "./snapshotService.js";
 import pulseService from "./pulseService.js";
 import fs from "fs";
 import fsPromises from "fs/promises";
@@ -19,7 +19,7 @@ class Scheduler {
 
     this.isProcessing = true;
     try {
-      const result = await rtspService.takeScreenshot();
+      const result = await snapshotService.takeScreenshot();
       if (!result || !result.filepath || !fs.existsSync(result.filepath)) {
         console.error("Screenshot ist ungültig oder existiert nicht:", result);
         return null;
@@ -36,7 +36,7 @@ class Scheduler {
   async postToDiscord(filepath) {
     try {
       const channel = await this.client.channels.fetch(process.env.SCREENSHOT_CHANNEL_ID);
-      const optimizedPath = await rtspService.optimizeForDiscord(filepath);
+      const optimizedPath = await snapshotService.optimizeForDiscord(filepath);
 
       const berlinTime = new Date().toLocaleTimeString("de-DE", {
         timeZone: "Europe/Berlin",
@@ -94,7 +94,7 @@ class Scheduler {
             })
             .replace(/\./g, "-");
 
-          await rtspService.createTimelapse(dayString);
+          await snapshotService.createTimelapse(dayString);
           console.log(`Timelapse für ${dayString} wurde erfolgreich erstellt`);
         } catch (error) {
           console.error("Fehler beim Erstellen der Timelapse:", error);

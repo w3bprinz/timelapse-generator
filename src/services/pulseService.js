@@ -16,7 +16,8 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
   },
 });
 
-const PULSE_DATA_PATH = "/app/pulse_data.json";
+const PULSE_DATA_PATH = path.join(process.cwd(), "data", "pulse_data.json");
+const ARCHIVE_PATH = path.join(process.cwd(), "data", "archives", "pulse_archive.json");
 
 async function loadData(days) {
   const raw = await fs.readFile(PULSE_DATA_PATH, "utf-8");
@@ -81,6 +82,25 @@ function createChartConfig(data) {
   };
 }
 
+async function archiveOldData(maxAgeDays = 30) {
+  const now = DateTime.now();
+  const data = await fs.readJSON(PULSE_DATA_PATH).catch(() => []);
+  const archive = await fs.readJSON(ARCHIVE_PATH).catch(() => []);
+
+  const fresh = [];
+  for (const entry of data) {
+    const time = DateTime.fromISO(entry.timestamp);
+    if (now.diff(time, "days").days > maxAgeDays) {
+      archive.push(entry);
+    } else {
+      fresh.push(entry);
+    }
+  }
+
+  await fs.writeJSON(PULSE_DATA_PATH, fresh, { spaces: 2 });
+  await fs.writeJSON(ARCHIVE_PATH, archive, { spaces: 2 });
+}
+
 export default {
   async createChart(days) {
     const data = await loadData(days);
@@ -108,5 +128,6 @@ export default {
     const data = await fs.readJSON(PULSE_DATA_PATH).catch(() => []);
     data.push(entry);
     await fs.writeJSON(PULSE_DATA_PATH, data, { spaces: 2 });
+    await archiveOldData();
   },
 };
