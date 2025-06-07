@@ -15,6 +15,7 @@
     "node-cron": "^3.0.2",
     "dotenv": "^16.3.1",
     "fluent-ffmpeg": "^2.1.2",
+    "chart.js": "^4.4.9",
     "chartjs-node-canvas": "^5.0.0"
   }
 }
