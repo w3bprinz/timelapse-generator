@@ -32,7 +32,7 @@ class PulseService {
     };
   }
 
-  async saveCurrentData() {
+  async collectPulseData() {
     const newData = await this.fetchData();
     const json = JSON.parse(fs.readFileSync(this.dataFile));
     json.push(newData);
