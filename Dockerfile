@@ -29,7 +29,7 @@ RUN npm install
 COPY . .
 
 # Erstelle die benötigten Ordner
-RUN mkdir -p screenshots timelapses
+RUN mkdir -p screenshots timelapses data
 
 # Setze Umgebungsvariablen
 ENV NODE_ENV=production
