@@ -24,7 +24,9 @@ class PulseService {
     if (!response.ok) throw new Error(`Pulse API Fehler: ${response.status}`);
     const data = await response.json();
     return {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleString("sv-SE", {
+        timeZone: "Europe/Berlin",
+      }),
       temperature: data.temperatureC,
       humidity: data.humidityRh,
       co2: data.co2,
