@@ -1,6 +1,6 @@
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { Chart, registerables, _adapters } from "chart.js";
-import adapterLuxon from "chartjs-adapter-luxon"; // <- benötigt für Node.js
+import * as adapterLuxon from "chartjs-adapter-luxon"; // <- benötigt für Node.js
 import "chartjs-adapter-luxon";
 import { DateTime } from "luxon";
 import fetch from "node-fetch";
