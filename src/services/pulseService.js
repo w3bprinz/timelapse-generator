@@ -1,15 +1,11 @@
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
-import { Chart, registerables, _adapters } from "chart.js";
-import * as adapterLuxon from "chartjs-adapter-luxon"; // <- benötigt für Node.js
-import "chartjs-adapter-luxon";
+import { Chart, registerables } from "chart.js";
+import * as adapterLuxon from "chartjs-adapter-luxon";
 import { DateTime } from "luxon";
 import fetch from "node-fetch";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
-
-Chart.register(...registerables);
-_adapters._date.override(adapterLuxon._date); // <- entscheidender Fix!
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +19,7 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
   backgroundColour: "#2c2f33",
   chartCallback: (ChartLib) => {
     ChartLib.register(...registerables);
+    ChartLib._adapters._date.override(adapterLuxon._date); // ✅ Adapter korrekt setzen
   },
 });
 
@@ -105,7 +102,7 @@ class PulseService {
   }
 
   async createChart(days) {
-    const data = await this.readData(days > 2); // Nur bei Bedarf Archivdaten einbeziehen
+    const data = await this.readData(days > 2); // Bei Bedarf Archivdaten einbeziehen
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
 
