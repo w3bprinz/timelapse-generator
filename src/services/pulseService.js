@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
+const { DateTime } = require("luxon");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
 
@@ -34,9 +35,7 @@ class PulseService {
     if (!response.ok) throw new Error(`Pulse API Fehler: ${response.status}`);
     const data = await response.json();
     return {
-      timestamp: new Date().toLocaleString("sv-SE", {
-        timeZone: "Europe/Berlin",
-      }),
+      timestamp: DateTime.now().setZone("Europe/Berlin").toISO(),
       temperature: data.temperatureC,
       humidity: data.humidityRh,
       co2: data.co2,
