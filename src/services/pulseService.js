@@ -7,10 +7,13 @@ const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
 
 let luxonAdapter;
-(async () => {
-  const imported = await import("chartjs-adapter-luxon");
-  luxonAdapter = imported.default;
-})();
+
+async function loadLuxonAdapterIfNeeded() {
+  if (!luxonAdapter) {
+    const imported = await import("chartjs-adapter-luxon");
+    luxonAdapter = imported.default;
+  }
+}
 
 class PulseService {
   constructor() {
@@ -58,6 +61,8 @@ class PulseService {
   }
 
   async createChart(days = 1) {
+    await loadLuxonAdapterIfNeeded();
+
     const width = 800;
     const height = 400;
 
@@ -65,9 +70,6 @@ class PulseService {
       width,
       height,
       chartCallback: (ChartJS) => {
-        if (!luxonAdapter) {
-          throw new Error("Luxon Adapter wurde nicht geladen!");
-        }
         ChartJS._adapters._date.override(luxonAdapter);
       },
     });
