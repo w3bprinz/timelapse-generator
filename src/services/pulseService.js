@@ -1,4 +1,4 @@
-require("chartjs-adapter-luxon");
+(async () => await import("chartjs-adapter-luxon"))();
 
 const fs = require("fs");
 const path = require("path");
