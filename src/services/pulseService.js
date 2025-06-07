@@ -1,5 +1,6 @@
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
-import { Chart, registerables } from "chart.js";
+import { Chart, registerables, _adapters } from "chart.js";
+import adapterLuxon from "chartjs-adapter-luxon"; // <- benötigt für Node.js
 import "chartjs-adapter-luxon";
 import { DateTime } from "luxon";
 import fetch from "node-fetch";
@@ -7,13 +8,14 @@ import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
 
+Chart.register(...registerables);
+_adapters._date.override(adapterLuxon._date); // <- entscheidender Fix!
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_PATH = path.resolve(__dirname, "../../data/pulse_data.json");
 const ARCHIVE_DIR = path.resolve(__dirname, "../../data/archives");
-
-Chart.register(...registerables);
 
 const chartJSNodeCanvas = new ChartJSNodeCanvas({
   width: 800,
