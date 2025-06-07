@@ -84,7 +84,10 @@ class PulseService {
     const data = await this.readData();
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const filtered = data.filter((entry) => isValid(parseISO(entry.timestamp)) && new Date(entry.timestamp) >= cutoff);
+    const filtered = data.filter((entry) => {
+      const date = DateTime.fromISO(entry.timestamp);
+      return date.isValid && date.toJSDate() >= cutoff;
+    });
 
     const labels = filtered.map((entry) => entry.timestamp);
     const datasets = [
