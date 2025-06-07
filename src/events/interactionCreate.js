@@ -1,3 +1,5 @@
+const { MessageFlags } = require("discord.js");
+
 module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
@@ -20,7 +22,7 @@ module.exports = {
         try {
           await interaction.reply({
             content: "Es ist ein Fehler aufgetreten! 🚨",
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         } catch (replyError) {
           console.error("Konnte nicht mehr auf Interaction antworten:", replyError);
