@@ -7,16 +7,6 @@ const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
 require("chartjs-adapter-luxon");
 
-// Dynamisches Laden von chartjs-adapter-luxon + manuelle Registrierung
-let luxonAdapter;
-async function ensureLuxonAdapterLoaded() {
-  if (!luxonAdapter) {
-    const imported = await import("chartjs-adapter-luxon");
-    luxonAdapter = imported.default;
-    Chart._adapters._date.override(luxonAdapter);
-  }
-}
-
 class PulseService {
   constructor() {
     this.apiKey = process.env.PULSE_API_KEY;
