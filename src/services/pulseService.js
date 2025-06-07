@@ -1,157 +1,112 @@
-import fs from "fs";
-import path from "path";
-import fetch from "node-fetch";
-import { DateTime } from "luxon";
-import { ChartJSNodeCanvas } from "chartjs-node-canvas";
-import { AttachmentBuilder } from "discord.js";
-import { Chart } from "chart.js";
+import { Chart, registerables } from "chart.js";
 import "chartjs-adapter-luxon";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import fs from "fs-extra";
+import path from "path";
+import sharp from "sharp";
+import { DateTime } from "luxon";
 
-class PulseService {
-  constructor() {
-    this.apiKey = process.env.PULSE_API_KEY;
-    this.deviceId = process.env.PULSE_DEVICE_ID;
-    this.channelId = process.env.PULSE_CHANNEL_ID;
-    this.dataFile = path.join(path.resolve(), "data/pulse_data.json");
-    this.archiveDir = path.join(path.resolve(), "data/archives");
+const width = 1000;
+const height = 500;
+const chartJSNodeCanvas = new ChartJSNodeCanvas({
+  width,
+  height,
+  chartCallback: (ChartLib) => {
+    ChartLib.register(...registerables);
+  },
+});
 
-    if (!fs.existsSync(this.archiveDir)) fs.mkdirSync(this.archiveDir, { recursive: true });
-    if (!fs.existsSync(this.dataFile)) fs.writeFileSync(this.dataFile, "[]");
-  }
+const PULSE_DATA_PATH = "/app/pulse_data.json";
 
-  async fetchData() {
-    const url = `https://api.pulsegrow.com/devices/${this.deviceId}/recent-data`;
-    const response = await fetch(url, {
-      headers: { "x-api-key": this.apiKey },
-    });
-    if (!response.ok) throw new Error(`Pulse API Fehler: ${response.status}`);
-    const data = await response.json();
-    return {
-      timestamp: DateTime.now().setZone("Europe/Berlin").toISO(),
-      temperature: data.temperatureC,
-      humidity: data.humidityRh,
-      co2: data.co2,
-      vpd: data.vpd,
-    };
-  }
+async function loadData(days) {
+  const raw = await fs.readFile(PULSE_DATA_PATH, "utf-8");
+  const data = JSON.parse(raw);
 
-  async collectPulseData() {
-    const newData = await this.fetchData();
-    const json = JSON.parse(fs.readFileSync(this.dataFile));
-    json.push(newData);
-    fs.writeFileSync(this.dataFile, JSON.stringify(json, null, 2));
-  }
-
-  loadAllData() {
-    return JSON.parse(fs.readFileSync(this.dataFile));
-  }
-
-  filterDataByDays(days) {
-    const now = new Date();
-    const cutoff = new Date(now - days * 24 * 60 * 60 * 1000);
-    return this.loadAllData().filter((entry) => new Date(entry.timestamp) >= cutoff);
-  }
-
-  async createChart(days = 1) {
-    const width = 800;
-    const height = 400;
-
-    const chart = new ChartJSNodeCanvas({
-      width,
-      height,
-    });
-
-    const data = this.filterDataByDays(days);
-    const labels = data.map((d) => new Date(d.timestamp));
-
-    const config = {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Temperatur (\u00b0C)",
-            data: data.map((d) => d.temperature),
-            borderWidth: 2,
-            tension: 0.3,
-          },
-          {
-            label: "Luftfeuchtigkeit (%)",
-            data: data.map((d) => d.humidity),
-            borderWidth: 2,
-            tension: 0.3,
-          },
-          {
-            label: "VPD",
-            data: data.map((d) => d.vpd),
-            borderWidth: 2,
-            tension: 0.3,
-          },
-          {
-            label: "CO₂ (ppm)",
-            data: data.map((d) => d.co2),
-            borderWidth: 2,
-            tension: 0.3,
-          },
-        ],
-      },
-      options: {
-        scales: {
-          x: {
-            type: "time",
-            time: {
-              unit: days === 1 ? "hour" : "day",
-              displayFormats: {
-                hour: "dd.MM HH:mm",
-                day: "dd.MM",
-              },
-            },
-            ticks: {
-              maxTicksLimit: 12,
-            },
-          },
-          y: {
-            beginAtZero: false,
-          },
-        },
-        plugins: {
-          legend: {
-            position: "bottom",
-          },
-        },
-      },
-    };
-
-    return chart.renderToBuffer(config);
-  }
-
-  async sendChartToDiscord(client, days = 1) {
-    const imageBuffer = await this.createChart(days);
-
-    if (!imageBuffer || !Buffer.isBuffer(imageBuffer)) {
-      throw new Error("Kein gültiges Chart-Image erstellt");
-    }
-
-    const nameMap = { 1: "tag", 7: "woche", 30: "monat" };
-    const filename = `pulse_chart_${nameMap[days] || days}.png`;
-    const attachment = new AttachmentBuilder(imageBuffer, { name: filename });
-
-    const channel = await client.channels.fetch(this.channelId);
-    if (!channel) throw new Error("Discord Channel nicht gefunden");
-
-    await channel.send({ files: [attachment] });
-  }
-
-  archiveDataIfNeeded() {
-    const now = new Date();
-    if (now.getDate() !== 1) return;
-
-    const allData = this.loadAllData();
-    const archivePath = path.join(this.archiveDir, `pulse_${now.getFullYear()}_${now.getMonth()}.json`);
-    fs.writeFileSync(archivePath, JSON.stringify(allData, null, 2));
-    fs.writeFileSync(this.dataFile, "[]");
-  }
+  const threshold = DateTime.now().minus({ days });
+  return data.filter((entry) => DateTime.fromISO(entry.timestamp) >= threshold);
 }
 
-const pulseService = new PulseService();
-export default pulseService;
+function createChartConfig(data) {
+  return {
+    type: "line",
+    data: {
+      labels: data.map((d) => d.timestamp),
+      datasets: [
+        {
+          label: "Temperatur (°C)",
+          data: data.map((d) => d.temperature),
+          borderColor: "#ff6384",
+          fill: false,
+        },
+        {
+          label: "Luftfeuchtigkeit (%)",
+          data: data.map((d) => d.humidity),
+          borderColor: "#36a2eb",
+          fill: false,
+        },
+        {
+          label: "CO₂ (ppm)",
+          data: data.map((d) => d.co2),
+          borderColor: "#4bc0c0",
+          fill: false,
+        },
+        {
+          label: "VPD",
+          data: data.map((d) => d.vpd),
+          borderColor: "#9966ff",
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: { position: "top" },
+        title: { display: true, text: "Pulse Klimadaten" },
+      },
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            tooltipFormat: "dd.MM.yyyy HH:mm",
+            displayFormats: { hour: "HH:mm", day: "dd.MM." },
+          },
+          title: { display: true, text: "Zeit" },
+        },
+        y: {
+          title: { display: true, text: "Wert" },
+        },
+      },
+    },
+  };
+}
+
+export default {
+  async createChart(days) {
+    const data = await loadData(days);
+    const config = createChartConfig(data);
+    return await chartJSNodeCanvas.renderToBuffer(config);
+  },
+
+  async sendChartToDiscord(client, days) {
+    const chartBuffer = await this.createChart(days);
+    const channel = await client.channels.fetch(process.env.PULSE_CHANNEL_ID);
+
+    const filename = `pulse_chart_${DateTime.now().toFormat("yyyyMMdd_HHmm")}.png`;
+    const filepath = path.join("/app/screenshots", filename);
+
+    await fs.writeFile(filepath, chartBuffer);
+    const resizedPath = filepath.replace(".png", "_resized.png");
+
+    await sharp(chartBuffer).resize(1920, 1080, { fit: "inside", withoutEnlargement: true }).toFile(resizedPath);
+
+    await channel.send({ files: [resizedPath] });
+    await fs.unlink(resizedPath);
+  },
+
+  async storePulseData(entry) {
+    const data = await fs.readJSON(PULSE_DATA_PATH).catch(() => []);
+    data.push(entry);
+    await fs.writeJSON(PULSE_DATA_PATH, data, { spaces: 2 });
+  },
+};
