@@ -11,6 +11,7 @@
   "dependencies": {
     "discord.js": "^14.14.1",
     "node-fetch": "^3.3.2",
+    "fs-extra": "^11.3.0",
     "sharp": "^0.32.6",
     "node-rtsp-stream": "^0.0.9",
     "node-cron": "^3.0.2",
