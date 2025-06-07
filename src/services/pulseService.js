@@ -51,12 +51,23 @@ class PulseService {
     }
   }
 
-  async readData() {
+  async readData(includeArchives = false) {
     try {
-      const exists = await fs.pathExists(DATA_PATH);
-      if (!exists) return [];
-      const content = await fs.readJson(DATA_PATH);
-      return Array.isArray(content) ? content : [];
+      const currentData = (await fs.pathExists(DATA_PATH)) ? await fs.readJson(DATA_PATH) : [];
+
+      if (!includeArchives) return currentData;
+
+      const archiveData = [];
+      const archiveFiles = await fs.readdir(ARCHIVE_DIR);
+
+      for (const file of archiveFiles) {
+        if (file.endsWith(".json")) {
+          const content = await fs.readJson(path.join(ARCHIVE_DIR, file));
+          if (Array.isArray(content)) archiveData.push(...content);
+        }
+      }
+
+      return [...archiveData, ...currentData];
     } catch (err) {
       console.error("Fehler beim Lesen der Pulse-Daten:", err);
       return [];
@@ -92,9 +103,10 @@ class PulseService {
   }
 
   async createChart(days) {
-    const data = await this.readData();
+    const data = await this.readData(days > 2); // Nur bei Bedarf Archivdaten einbeziehen
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
+
     const filtered = data.filter((entry) => {
       const date = DateTime.fromISO(entry.timestamp);
       return date.isValid && date.toJSDate() >= cutoff;
