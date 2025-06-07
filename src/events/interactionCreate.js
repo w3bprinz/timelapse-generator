@@ -1,6 +1,6 @@
-const { MessageFlags } = require("discord.js");
+import { MessageFlags } from "discord.js";
 
-module.exports = {
+export default {
   name: "interactionCreate",
   async execute(interaction) {
     if (!interaction.isChatInputCommand()) return;
@@ -17,7 +17,6 @@ module.exports = {
     } catch (error) {
       console.error("Unbehandelter Fehler im Command:", error);
 
-      // Falls Interaction noch NICHT beantwortet wurde (wichtig!)
       if (!interaction.replied && !interaction.deferred) {
         try {
           await interaction.reply({
@@ -28,7 +27,6 @@ module.exports = {
           console.error("Konnte nicht mehr auf Interaction antworten:", replyError);
         }
       }
-      // Wenn Interaction schon deferred oder replied wurde → einfach nur Fehler loggen
     }
   },
 };

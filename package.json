@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "Discord Bot für RTSP Stream Screenshots und Timelapse-Generierung",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "deploy": "node src/deploy-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "node-fetch": "^2.6.9",
+    "node-fetch": "^3.3.2",
     "sharp": "^0.32.6",
     "node-rtsp-stream": "^0.0.9",
     "node-cron": "^3.0.2",

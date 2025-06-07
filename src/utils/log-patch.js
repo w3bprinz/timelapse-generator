@@ -1,4 +1,3 @@
-// log-patch.js
 function getTimestamp() {
   const now = new Date().toLocaleString("sv-SE", {
     timeZone: "Europe/Berlin",

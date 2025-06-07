@@ -1,8 +1,14 @@
-const fs = require("fs");
-const path = require("path");
-const sharp = require("sharp");
-const fetch = require("node-fetch");
-const { spawn } = require("child_process");
+// snapshotService.js – ESM-Version
+
+import fs from "fs";
+import path from "path";
+import { spawn } from "child_process";
+import sharp from "sharp";
+import fetch from "node-fetch";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class SnapshotService {
   constructor() {
@@ -48,20 +54,18 @@ class SnapshotService {
         fileStream.on("finish", resolve);
       });
 
-      // Convert to PNG and remove original JPG
       await sharp(jpgPath).png().toFile(pngPath);
       fs.unlinkSync(jpgPath);
 
       const stats = fs.statSync(pngPath);
       const fileSizeMB = (stats.size / 1024 / 1024).toFixed(1);
       if (stats.size < 3 * 1024 * 1024) {
-        console.warn(`⚠️ Screenshot ungültig (Size: ${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
+        console.warn(`⚠️ Screenshot ungültig (Size: ${fileSizeMB} MB)`);
         fs.unlinkSync(pngPath);
         return null;
       }
 
       console.log(`✅ Screenshot erfolgreich: ${path.basename(pngPath)} (${fileSizeMB} MB)`);
-
       return {
         filename: path.basename(pngPath),
         filepath: pngPath,
@@ -174,4 +178,4 @@ class SnapshotService {
   }
 }
 
-module.exports = SnapshotService;
+export default SnapshotService;

@@ -1,9 +1,9 @@
-const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs").promises; // <-- Promises-API benutzen
-const path = require("path");
-const sharp = require("sharp");
+import { SlashCommandBuilder } from "discord.js";
+import fs from "fs/promises";
+import path from "path";
+import sharp from "sharp";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
 
   async execute(interaction) {
@@ -12,12 +12,10 @@ module.exports = {
     const screenshotsPath = "/app/screenshots";
 
     try {
-      // Prüfen, ob Screenshot-Ordner existiert
       await fs.access(screenshotsPath).catch(() => {
         throw new Error("Kein Screenshot-Ordner gefunden!");
       });
 
-      // Dateien lesen und nach Änderungsdatum sortieren
       const allFiles = await fs.readdir(screenshotsPath);
       const pngFiles = [];
 
@@ -40,12 +38,10 @@ module.exports = {
         return;
       }
 
-      // Neueste Datei bestimmen
       pngFiles.sort((a, b) => b.time - a.time);
       const latestFile = pngFiles[0];
       const resizedPath = path.join(screenshotsPath, `resized_${latestFile.name}`);
 
-      // Bild verkleinern
       await sharp(latestFile.path)
         .resize(1920, 1080, {
           fit: "inside",
@@ -53,16 +49,13 @@ module.exports = {
         })
         .toFile(resizedPath);
 
-      const buffer = await fs.readFile(resizedPath); // Lade als Buffer
+      const buffer = await fs.readFile(resizedPath);
 
-      // Antwort mit Bild schicken
       await interaction.editReply({
-        //content: "Hier ist das letzte aufgenommene Bild:",
         content: `🖼️ Letzter Screenshot: \`${latestFile.name}\``,
-        files: [{ attachment: buffer, name: latestFile.name }], // Buffer statt Pfad
+        files: [{ attachment: buffer, name: latestFile.name }],
       });
 
-      // Aufräumen
       await fs.unlink(resizedPath);
     } catch (error) {
       console.error("Fehler:", error.message || error);
@@ -72,7 +65,6 @@ module.exports = {
         });
       } catch (editError) {
         console.error("Konnte Fehler nicht an Interaction senden:", editError);
-        // Hier nichts mehr tun, Interaction ist dann halt tot
       }
     }
   },

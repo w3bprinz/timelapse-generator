@@ -1,7 +1,11 @@
-const fs = require("fs");
-const path = require("path");
-const sharp = require("sharp");
-const { spawn } = require("child_process");
+import fs from "fs";
+import path from "path";
+import sharp from "sharp";
+import { spawn } from "child_process";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class RTSPStreamService {
   constructor() {
@@ -11,12 +15,8 @@ class RTSPStreamService {
   }
 
   ensureDirectories() {
-    if (!fs.existsSync(this.screenshotsPath)) {
-      fs.mkdirSync(this.screenshotsPath, { recursive: true });
-    }
-    if (!fs.existsSync(this.timelapsePath)) {
-      fs.mkdirSync(this.timelapsePath, { recursive: true });
-    }
+    if (!fs.existsSync(this.screenshotsPath)) fs.mkdirSync(this.screenshotsPath, { recursive: true });
+    if (!fs.existsSync(this.timelapsePath)) fs.mkdirSync(this.timelapsePath, { recursive: true });
   }
 
   getBerlinTimestamp() {
@@ -122,10 +122,7 @@ class RTSPStreamService {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .png({
-          quality: 100,
-          compressionLevel: 0,
-        })
+        .png({ quality: 100, compressionLevel: 0 })
         .toFile(discordPath);
 
       const stats = fs.statSync(discordPath);
@@ -138,10 +135,7 @@ class RTSPStreamService {
               fit: "inside",
               withoutEnlargement: true,
             })
-            .png({
-              quality: quality,
-              compressionLevel: 0,
-            })
+            .png({ quality, compressionLevel: 0 })
             .toFile(discordPath);
         }
       }
@@ -161,7 +155,6 @@ class RTSPStreamService {
       const screenshots = fs
         .readdirSync(screenshotsDir)
         .filter((file) => file.endsWith(".png") && file.startsWith("screenshot_"));
-
       console.log(`Gefundene Screenshots: ${screenshots.length}`);
       if (screenshots.length === 0) {
         return reject(new Error("Keine Screenshots im Verzeichnis gefunden"));
@@ -223,4 +216,4 @@ class RTSPStreamService {
   }
 }
 
-module.exports = new RTSPStreamService();
+export default new RTSPStreamService();

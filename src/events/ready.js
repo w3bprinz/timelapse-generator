@@ -1,7 +1,6 @@
-const Scheduler = require("../services/scheduler");
-const { ActivityType } = require("discord.js");
+import Scheduler from "../services/scheduler.js";
+import { ActivityType } from "discord.js";
 
-// Status-Nachrichten für den Rotator
 const statusMessages = [
   { type: ActivityType.Watching, text: "👀 {GROWER_COUNT} Growern zu" },
   { type: ActivityType.Watching, text: "🌱 Pflanzenwachstum überwachen" },
@@ -20,7 +19,7 @@ const statusMessages = [
     : []),
 ];
 
-module.exports = {
+export default {
   name: "ready",
   once: true,
   async execute(client) {
@@ -28,7 +27,7 @@ module.exports = {
 
     new Scheduler(client);
 
-    const guild = client.guilds.cache.get(process.env.GUILD_ID); // 🔁 Stelle sicher, dass GUILD_ID in .env ist
+    const guild = client.guilds.cache.get(process.env.GUILD_ID);
     if (!guild) {
       console.error("Guild nicht gefunden. Bitte GUILD_ID prüfen.");
       return;
@@ -38,12 +37,10 @@ module.exports = {
 
     const updateStatus = async () => {
       try {
-        //await guild.members.fetch(); // Nur bei Bedarf (optional, bei sehr großen Servern nötig)
         const memberCount = guild.memberCount;
         const statusTemplate = statusMessages[statusIndex];
         let statusText = statusTemplate.text.replace("{GROWER_COUNT}", memberCount);
 
-        // Spezielle Behandlung für Streaming-Status
         if (statusTemplate.type === ActivityType.Streaming) {
           client.user.setActivity(statusText, {
             type: statusTemplate.type,
@@ -59,10 +56,7 @@ module.exports = {
       }
     };
 
-    // Starte sofort nach 1 Sekunde
     setTimeout(updateStatus, 1000);
-
-    // Wiederhole alle 30 Sekunden
     setInterval(updateStatus, 30000);
   },
 };

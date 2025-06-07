@@ -1,25 +1,21 @@
-const fs = require("fs");
-const path = require("path");
-const fetch = require("node-fetch");
-const { DateTime } = require("luxon");
-const Chart = require("chart.js");
-const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
-const { AttachmentBuilder } = require("discord.js");
+import fs from "fs";
+import path from "path";
+import fetch from "node-fetch";
+import { DateTime } from "luxon";
+import Chart from "chart.js/auto";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import { AttachmentBuilder } from "discord.js";
+import luxonAdapter from "chartjs-adapter-luxon";
 
-let luxonAdapter;
-(async () => {
-  const imported = await import("chartjs-adapter-luxon");
-  luxonAdapter = imported.default;
-  Chart._adapters._date.override(luxonAdapter);
-})();
+Chart._adapters._date.override(luxonAdapter);
 
 class PulseService {
   constructor() {
     this.apiKey = process.env.PULSE_API_KEY;
     this.deviceId = process.env.PULSE_DEVICE_ID;
     this.channelId = process.env.PULSE_CHANNEL_ID;
-    this.dataFile = path.join(__dirname, "../../data/pulse_data.json");
-    this.archiveDir = path.join(__dirname, "../../data/archives");
+    this.dataFile = path.join(path.resolve(), "data/pulse_data.json");
+    this.archiveDir = path.join(path.resolve(), "data/archives");
 
     if (!fs.existsSync(this.archiveDir)) fs.mkdirSync(this.archiveDir, { recursive: true });
     if (!fs.existsSync(this.dataFile)) fs.writeFileSync(this.dataFile, "[]");
@@ -65,11 +61,6 @@ class PulseService {
     const chart = new ChartJSNodeCanvas({
       width,
       height,
-      chartCallback: (ChartJS) => {
-        if (luxonAdapter) {
-          ChartJS._adapters._date.override(luxonAdapter);
-        }
-      },
     });
 
     const data = this.filterDataByDays(days);
@@ -81,7 +72,7 @@ class PulseService {
         labels,
         datasets: [
           {
-            label: "Temperatur (°C)",
+            label: "Temperatur (\u00b0C)",
             data: data.map((d) => d.temperature),
             borderWidth: 2,
             tension: 0.3,
@@ -164,4 +155,5 @@ class PulseService {
   }
 }
 
-module.exports = new PulseService();
+const pulseService = new PulseService();
+export default pulseService;

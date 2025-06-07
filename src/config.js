@@ -1,7 +1,6 @@
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
-module.exports = {
-  token: process.env.DISCORD_TOKEN,
-  clientId: process.env.CLIENT_ID,
-  guildId: process.env.GUILD_ID,
-};
+export const token = process.env.DISCORD_TOKEN;
+export const clientId = process.env.CLIENT_ID;
+export const guildId = process.env.GUILD_ID;

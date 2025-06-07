@@ -1,11 +1,8 @@
-const cron = require("node-cron");
-//const rtspService = require("./rtspService");
-const SnapshotService = require("./snapshotService");
-const rtspService = new SnapshotService();
-const pulseService = require("./pulseService");
-const { Client } = require("discord.js");
-const fs = require("fs");
-const fsPromises = require("fs").promises;
+import cron from "node-cron";
+import rtspService from "./rtspService.js";
+import pulseService from "./pulseService.js";
+import fs from "fs";
+import fsPromises from "fs/promises";
 
 class Scheduler {
   constructor(client) {
@@ -52,7 +49,6 @@ class Scheduler {
         files: [optimizedPath],
       });
 
-      // Lösche das temporäre optimierte Bild
       if (fs.existsSync(optimizedPath)) {
         await fsPromises.unlink(optimizedPath);
       }
@@ -62,18 +58,13 @@ class Scheduler {
   }
 
   setupSchedules() {
-    // Screenshot alle 5 Minuten mit optionalem Posting
     cron.schedule(
       "*/5 * * * *",
       async () => {
         try {
           const result = await this.processScreenshot();
-          if (!result) {
-            console.log("Kein Screenshot erstellt, überspringe...");
-            return;
-          }
+          if (!result) return;
 
-          // Prüfe, ob es Zeit für ein Posting ist (8:00 oder 20:00)
           const now = new Date();
           const hour = now.getHours();
           const minute = now.getMinutes();
@@ -85,12 +76,9 @@ class Scheduler {
           console.error("Fehler beim Erstellen des Screenshots:", error);
         }
       },
-      {
-        timezone: "Europe/Berlin",
-      }
+      { timezone: "Europe/Berlin" }
     );
 
-    // Timelapse-Erstellung um Mitternacht
     cron.schedule(
       "0 0 * * *",
       async () => {
@@ -112,12 +100,9 @@ class Scheduler {
           console.error("Fehler beim Erstellen der Timelapse:", error);
         }
       },
-      {
-        timezone: "Europe/Berlin",
-      }
+      { timezone: "Europe/Berlin" }
     );
 
-    // Pulse-Daten sammeln (stündlich)
     cron.schedule(
       "0 * * * *",
       async () => {
@@ -128,12 +113,9 @@ class Scheduler {
           console.error("❌ Fehler beim Sammeln der Pulse-Daten:", err);
         }
       },
-      {
-        timezone: "Europe/Berlin",
-      }
+      { timezone: "Europe/Berlin" }
     );
 
-    // Historische Pulse-Daten archivieren (täglich um Mitternacht)
     cron.schedule(
       "0 0 * * *",
       async () => {
@@ -144,12 +126,9 @@ class Scheduler {
           console.error("❌ Fehler beim Archivieren der Pulse-Daten:", err);
         }
       },
-      {
-        timezone: "Europe/Berlin",
-      }
+      { timezone: "Europe/Berlin" }
     );
 
-    // Tageschart um 9 Uhr
     cron.schedule(
       "0 9 * * *",
       async () => {
@@ -163,7 +142,6 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
-    // Wochenchart jeden Montag um 9 Uhr
     cron.schedule(
       "0 9 * * 1",
       async () => {
@@ -177,7 +155,6 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
-    // Monatschart am 1. des Monats um 9 Uhr
     cron.schedule(
       "0 9 1 * *",
       async () => {
@@ -193,4 +170,4 @@ class Scheduler {
   }
 }
 
-module.exports = Scheduler;
+export default Scheduler;

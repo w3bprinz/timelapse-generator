@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
-const pulseService = require("../services/pulseService");
+import { SlashCommandBuilder, AttachmentBuilder } from "discord.js";
+import pulseService from "../services/pulseService.js";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName("pulsechart")
     .setDescription("Zeigt einen Chart der Klimadaten von Pulse")

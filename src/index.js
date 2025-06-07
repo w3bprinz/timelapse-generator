@@ -1,10 +1,14 @@
-require("dotenv").config();
-require("./utils/log-patch");
+import "dotenv/config";
+import "./utils/log-patch.js";
 
-const { Client, GatewayIntentBits, Collection, REST, Routes } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
-const { token, clientId, guildId } = require("./config");
+import { Client, GatewayIntentBits, Collection, REST, Routes } from "discord.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { token, clientId, guildId } from "./config.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const client = new Client({
   intents: [
@@ -24,49 +28,38 @@ const client = new Client({
   },
 });
 
-// Command Handler
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
 
-// Lade Commands und bereite sie für das Deploy vor
 const commands = [];
 for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const command = require(filePath);
-  if ("data" in command && "execute" in command) {
-    client.commands.set(command.data.name, command);
-    commands.push(command.data.toJSON());
+  const command = await import(path.join(commandsPath, file));
+  if ("data" in command.default && "execute" in command.default) {
+    client.commands.set(command.default.data.name, command.default);
+    commands.push(command.default.data.toJSON());
   }
 }
 
-// Event Handler
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith(".js"));
 
 for (const file of eventFiles) {
-  const filePath = path.join(eventsPath, file);
-  const event = require(filePath);
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args));
+  const event = await import(path.join(eventsPath, file));
+  const evt = event.default;
+  if (evt.once) {
+    client.once(evt.name, (...args) => evt.execute(...args));
   } else {
-    client.on(event.name, (...args) => event.execute(...args));
+    client.on(evt.name, (...args) => evt.execute(...args));
   }
 }
 
-// Bot ist bereit
 client.once("ready", async () => {
   console.log("Bot ist bereit!");
-
-  // Deploy Commands
   const rest = new REST({ version: "10" }).setToken(token);
-
-  // Umschaltbar zwischen Guild- oder Global-Deploy
   const useGlobal = process.env.USE_GLOBAL_COMMANDS;
-
   const route = useGlobal ? Routes.applicationCommands(clientId) : Routes.applicationGuildCommands(clientId, guildId);
 
-  // Guild Commands löschen, um doppelte Slash Commands zu vermeiden
   try {
     await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
     console.log("🧹 Alte Guild-Commands erfolgreich entfernt.");

@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require("discord.js");
-const fetch = require("node-fetch");
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
+import fetch from "node-fetch";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName("pulse")
     .setDescription("Zeigt aktuelle Sensordaten vom Pulse Grow Pulse Pro an")
@@ -40,10 +40,26 @@ module.exports = {
         .setTitle("🌿 Pulse Grow Sensordaten")
         .setColor(0x00ff99)
         .addFields(
-          { name: "🌡️ Temperatur", value: `${data.temperatureC?.toFixed(2) ?? "n/A"} °C`, inline: true },
-          { name: "💧 Luftfeuchtigkeit", value: `${data.humidityRh?.toFixed(2) ?? "n/A"} %`, inline: true },
-          { name: "🌫️ CO₂", value: `${data.co2?.toFixed(2) ?? "n/A"} ppm`, inline: true },
-          { name: "📈 VPD", value: `${data.vpd?.toFixed(2) ?? "n/A"}`, inline: true }
+          {
+            name: "🌡️ Temperatur",
+            value: `${data.temperatureC?.toFixed(2) ?? "n/A"} °C`,
+            inline: true,
+          },
+          {
+            name: "💧 Luftfeuchtigkeit",
+            value: `${data.humidityRh?.toFixed(2) ?? "n/A"} %`,
+            inline: true,
+          },
+          {
+            name: "🌫️ CO₂",
+            value: `${data.co2?.toFixed(2) ?? "n/A"} ppm`,
+            inline: true,
+          },
+          {
+            name: "📈 VPD",
+            value: `${data.vpd?.toFixed(2) ?? "n/A"}`,
+            inline: true,
+          }
         )
         .setTimestamp(new Date(data.createdAt + "Z"))
         .setFooter({ text: "Pulse Grow Pro" });
