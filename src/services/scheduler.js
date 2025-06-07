@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import SnapshotService from "./snapshotService.js";
 const snapshotService = new SnapshotService();
-import pulseService from "./pulseService.js";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -105,74 +104,6 @@ class Scheduler {
           console.log(`Timelapse für ${dayString} wurde erfolgreich erstellt`);
         } catch (error) {
           console.error("Fehler beim Erstellen der Timelapse:", error);
-        }
-      },
-      { timezone: "Europe/Berlin" }
-    );
-
-    // Stündliche Pulse-Daten sammeln
-    cron.schedule(
-      "0 * * * *",
-      async () => {
-        try {
-          await pulseService.collectPulseData();
-          console.log("✅ Pulse-Daten erfolgreich gesammelt.");
-        } catch (err) {
-          console.error("❌ Fehler beim Sammeln der Pulse-Daten:", err);
-        }
-      },
-      { timezone: "Europe/Berlin" }
-    );
-
-    // Tägliches Archivieren
-    cron.schedule(
-      "0 0 * * *",
-      async () => {
-        try {
-          await pulseService.archiveOldData();
-          console.log("📦 Historische Pulse-Daten archiviert.");
-        } catch (err) {
-          console.error("❌ Fehler beim Archivieren der Pulse-Daten:", err);
-        }
-      },
-      { timezone: "Europe/Berlin" }
-    );
-
-    // Charts
-    cron.schedule(
-      "0 9 * * *",
-      async () => {
-        try {
-          await pulseService.sendChartToDiscord(this.client, 1);
-          console.log("📈 Tages-Chart an Discord gesendet");
-        } catch (err) {
-          console.error("❌ Fehler beim Senden des Tages-Charts:", err);
-        }
-      },
-      { timezone: "Europe/Berlin" }
-    );
-
-    cron.schedule(
-      "0 9 * * 1",
-      async () => {
-        try {
-          await pulseService.sendChartToDiscord(this.client, 7);
-          console.log("📈 Wochen-Chart an Discord gesendet");
-        } catch (err) {
-          console.error("❌ Fehler beim Senden des Wochen-Charts:", err);
-        }
-      },
-      { timezone: "Europe/Berlin" }
-    );
-
-    cron.schedule(
-      "0 9 1 * *",
-      async () => {
-        try {
-          await pulseService.sendChartToDiscord(this.client, 30);
-          console.log("📈 Monats-Chart an Discord gesendet");
-        } catch (err) {
-          console.error("❌ Fehler beim Senden des Monats-Charts:", err);
         }
       },
       { timezone: "Europe/Berlin" }

@@ -11,17 +11,6 @@ ENV TZ=Europe/Berlin
 # Kopiere package.json und package-lock.json
 COPY package*.json ./
 
-# Installiere systemweite Abhängigkeiten für node-canvas (chartjs-node-canvas)
-RUN apk add --no-cache \
-  python3 \
-  make \
-  g++ \
-  cairo-dev \
-  pango-dev \
-  jpeg-dev \
-  giflib-dev \
-  librsvg-dev
-
 # Installiere Abhängigkeiten
 RUN npm install
 
