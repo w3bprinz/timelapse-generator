@@ -2,12 +2,9 @@ import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
 import { DateTime } from "luxon";
-import Chart from "chart.js/auto";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { AttachmentBuilder } from "discord.js";
-import luxonAdapter from "chartjs-adapter-luxon";
-
-Chart._adapters._date.override(luxonAdapter);
+import "chartjs-adapter-luxon";
 
 class PulseService {
   constructor() {
