@@ -1,10 +1,18 @@
-(async () => await import("chartjs-adapter-luxon"))();
-
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
+
+// Luxon-Adapter einmalig laden
+let luxonAdapterLoaded = false;
+
+async function ensureLuxonAdapterLoaded() {
+  if (!luxonAdapterLoaded) {
+    await import("chartjs-adapter-luxon");
+    luxonAdapterLoaded = true;
+  }
+}
 
 class PulseService {
   constructor() {
@@ -54,13 +62,13 @@ class PulseService {
   }
 
   async createChart(days = 1) {
+    await ensureLuxonAdapterLoaded(); // Adapter vor dem ersten Chart laden
+
     const width = 800;
     const height = 400;
     const chart = new ChartJSNodeCanvas({ width, height });
 
     const data = this.filterDataByDays(days);
-
-    // Luxon-kompatible Labels: echte Date-Objekte!
     const labels = data.map((d) => new Date(d.timestamp));
 
     const config = {
