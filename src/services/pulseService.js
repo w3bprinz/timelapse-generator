@@ -12,7 +12,7 @@ async function ensureLuxonAdapterLoaded() {
   if (!luxonAdapter) {
     const imported = await import("chartjs-adapter-luxon");
     luxonAdapter = imported.default;
-    Chart.register(luxonAdapter);
+    Chart._adapters._date.override(luxonAdapter);
   }
 }
 
@@ -70,7 +70,7 @@ class PulseService {
       width,
       height,
       chartCallback: (ChartJS) => {
-        ChartJS.register(luxonAdapter);
+        ChartJS._adapters._date.override(luxonAdapter);
       },
     });
 
