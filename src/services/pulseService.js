@@ -4,13 +4,15 @@ const fetch = require("node-fetch");
 const { DateTime } = require("luxon");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const { AttachmentBuilder } = require("discord.js");
+const Chart = require("chart.js");
 
-// Luxon-Adapter einmalig laden
+// Luxon-Adapter einmalig laden und registrieren
 let luxonAdapterLoaded = false;
 
 async function ensureLuxonAdapterLoaded() {
   if (!luxonAdapterLoaded) {
-    await import("chartjs-adapter-luxon");
+    const luxonAdapter = await import("chartjs-adapter-luxon");
+    Chart._adapters._date.override(luxonAdapter.default);
     luxonAdapterLoaded = true;
   }
 }
@@ -61,7 +63,7 @@ class PulseService {
   }
 
   async createChart(days = 1) {
-    await ensureLuxonAdapterLoaded(); // Adapter vor dem ersten Chart laden
+    await ensureLuxonAdapterLoaded(); // Luxon-Adapter registrieren
 
     const width = 800;
     const height = 400;
