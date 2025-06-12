@@ -8,7 +8,6 @@ services:
     volumes:
       - /mnt/user/appdata/timelapse-generator/screenshots:/app/screenshots:rw
       - /mnt/user/appdata/timelapse-generator/timelapses:/app/timelapses:rw
-      - /mnt/user/appdata/timelapse-generator/data:/app/data:rw
       - /mnt/user/appdata/timelapse-generator/.env:/app/.env:ro
     environment:
       - NODE_ENV=production
