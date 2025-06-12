@@ -4,6 +4,7 @@ const snapshotService = new SnapshotService();
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
+import pulseDaily from "../commands/pulseDaily.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,6 +80,20 @@ class Scheduler {
           }
         } catch (error) {
           console.error("Fehler beim Erstellen des Screenshots:", error);
+        }
+      },
+      { timezone: "Europe/Berlin" }
+    );
+
+    // Täglich um 20 Uhr - Pulse Summary in Discord posten!
+    cron.schedule(
+      "0 20 * * *",
+      async () => {
+        try {
+          await pulseDaily.sendSummaryToDiscord(this.client);
+          console.log("📊 Pulse Tagesübersicht gesendet");
+        } catch (err) {
+          console.error("❌ Fehler bei Pulse Tagesübersicht:", err);
         }
       },
       { timezone: "Europe/Berlin" }
