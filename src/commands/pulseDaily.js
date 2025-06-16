@@ -7,8 +7,8 @@ dotenv.config();
 
 async function fetchPulseData() {
   const now = DateTime.now().setZone("Europe/Berlin");
-  const start = now.minus({ days: 1 }).set({ hour: 20, minute: 0, second: 0 });
-  const end = now.set({ hour: 20, minute: 0, second: 0 });
+  const start = now.minus({ days: 1 }).set({ hour: 18, minute: 0, second: 0 });
+  const end = now.set({ hour: 18, minute: 0, second: 0 });
 
   const url = `https://api.pulsegrow.com/devices/${process.env.PULSE_DEVICE_ID}/data-range?start=${start
     .toUTC()

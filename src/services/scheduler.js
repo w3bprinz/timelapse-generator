@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import { DateTime } from "luxon";
 import SnapshotService from "./snapshotService.js";
 const snapshotService = new SnapshotService();
 import fs from "fs-extra";
@@ -85,9 +86,9 @@ class Scheduler {
       { timezone: "Europe/Berlin" }
     );
 
-    // Täglich um 20 Uhr - Pulse Summary in Discord posten!
+    // Täglich um 18 Uhr - Pulse Summary in Discord posten!
     cron.schedule(
-      "0 20 * * *",
+      "0 18 * * *",
       async () => {
         try {
           await pulseDaily.sendSummaryToDiscord(this.client);
@@ -104,16 +105,7 @@ class Scheduler {
       "0 0 * * *",
       async () => {
         try {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const dayString = yesterday
-            .toLocaleDateString("de-DE", {
-              timeZone: "Europe/Berlin",
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-            .replace(/\./g, "-");
+          const dayString = DateTime.now().setZone("Europe/Berlin").minus({ days: 1 }).toFormat("yyyy-MM-dd");
 
           await snapshotService.createTimelapse(dayString);
           console.log(`Timelapse für ${dayString} wurde erfolgreich erstellt`);
