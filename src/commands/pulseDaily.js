@@ -62,7 +62,7 @@ async function sendSummaryToDiscord(client) {
   const averages = calculateAverages(data);
 
   const embed = new EmbedBuilder()
-    .setTitle("🌿 Pulse Tagesübersicht (20 Uhr)")
+    .setTitle("🌿 Pulse Tagesübersicht (18 Uhr)")
     .setDescription("Durchschnittswerte der letzten 24 Stunden")
     .addFields(
       { name: "🌡️ Temperatur", value: `${averages.temperatureC?.toFixed(1)} °C`, inline: true },
