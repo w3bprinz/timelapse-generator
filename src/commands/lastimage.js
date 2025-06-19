@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import { SlashCommandBuilder } from "discord.js";
 import fs from "fs/promises";
 import path from "path";
@@ -7,6 +10,15 @@ export default {
   data: new SlashCommandBuilder().setName("lastimage").setDescription("Zeigt das letzte aufgenommene Bild an"),
 
   async execute(interaction) {
+    const allowedChannelId = process.env.SCREENSHOT_CHANNEL_ID;
+
+    if (interaction.channelId !== allowedChannelId) {
+      return await interaction.reply({
+        content: "❌ Dieser Befehl kann nur im vorgesehenen Screenshot-Kanal verwendet werden.",
+        ephemeral: true,
+      });
+    }
+
     await interaction.deferReply();
 
     const screenshotsPath = "/app/screenshots";
